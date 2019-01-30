@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 			std::cout<<a<<" is bad request!\n";
 			return 0;
 		}
-		
+		//추후 스레드 관리를 위하여 vector에 저장
 		threads.push_back(std::thread(DummyServer, a));
 	}
 	
