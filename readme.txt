@@ -1,26 +1,26 @@
-ÇÁ·Î±×·¥ ¼³¸í
-´õ¹Ì¼­¹öÀÇ ¿ªÇÒÀ» ÇÏ´Â ÇÁ·Î±×·¥À¸·Î Ãß°¡ÆÄÀÏÀ» ³Ö¾îÁà¼­ ¿©·¯ API¿¡ ´ëÇÑ ´õ¹Ì¼­¹ö¿ªÇÒÀ» ¿©·¯ Æ÷Æ®¸¦ ¿­¾î ÇÒ ¼ö ÀÖ´Ù.
-ÇöÀç´Â http¿¡ ´ëÇÑ ¿äÃ»¸¸ Àü´ÞÀÌ °¡´ÉÇÏ´Ù.
+ï»¿í”„ë¡œê·¸ëž¨ ì„¤ëª…
+ë”ë¯¸ ì„œë²„ì˜ ì—­í• ì„ í•˜ëŠ” í”„ë¡œê·¸ëž¨ìœ¼ë¡œ ì¶”ê°€íŒŒì¼ì„ ë„£ì–´ì¤˜ì„œ ì—¬ëŸ¬ APIì— ëŒ€í•œ ë”ë¯¸ ì„œë²„ ì—­í• ì„, ì—¬ëŸ¬ê°œì˜ í¬íŠ¸ë¥¼ ì—´ì–´ì„œ ë™ìž‘í•œë‹¤.
+í˜„ìž¬ëŠ” httpì— ëŒ€í•œ ìš”ì²­ë§Œ ì „ë‹¬ì´ ê°€ëŠ¥í•˜ë‹¤.
 
 
-»ç¿ë¹æ¹ý
+ì‚¬ìš©ë°©ë²•
 
-1.½ÇÇàÆÄÀÏ°ú °°Àº °æ·Î¿¡ AhatDummyServerAPI(½ÇÇàÆÄÀÏ¸í + API)I Æú´õ¸¦ »ý¼ºÇÑ´Ù
+1. ì‹¤í–‰íŒŒì¼ê³¼ ê°™ì€ ê²½ë¡œì— AhatDummyServerAPI(ì‹¤í–‰íŒŒì¼ëª… + API) í´ë”ë¥¼ ìƒì„±í•œë‹¤
 
-2.ÇØ´ç Æú´õ ¾È¿¡ API ÁÖ¼Ò¿Í °°Àº °æ·Î·Î ÆÄÀÏÀ» ¸¸µé°í ÆÄÀÏÀÇ ³»¿ëÀº response·Î ³¯¾Æ°¥ µ¥ÀÌÅÍ¸¦ ³Ö´Â´Ù.
+2. í•´ë‹¹ í´ë” ì•ˆì— API ì£¼ì†Œì™€ ê°™ì€ ê²½ë¡œë¡œ íŒŒì¼ì„ ë§Œë“¤ê³  íŒŒì¼ì˜ ë‚´ìš©ì€ responseë¡œ ë‚ ì•„ê°ˆ ë°ì´í„°ë¥¼ ë„£ëŠ”ë‹¤.
 ex : 
 http://127.0.0.1:8888/API/APC/API/GetFileData 
-¶ó´Â API¿¡ ´ëÇÑ ÀÀ´äÀ» ¸¸µé°í ½ÍÀ¸¸é
-AhatDummyServerAPI/APC/API °æ·Î¿¡ GetFileData ÆÄÀÏÀ» ¸¸µç´Ù.
+ë¼ëŠ” APIì— ëŒ€í•œ ì‘ë‹µì„ ë§Œë“¤ê³  ì‹¶ìœ¼ë©´
+AhatDummyServerAPI/APC/API ê²½ë¡œì— GetFileData íŒŒì¼ì„ ë§Œë“ ë‹¤.
 
-3. AhatDummyServer ¸¦ ½ÇÇàÇÑ´Ù µÚ¿¡ Æ÷Æ®ÁÖ¼Ò¸¦ ³Ö¾îÁÖ¸é µÇ°í Æ÷Æ®´Â ¿©·¯°³¸¦ »ç¿ë °¡´ÉÇÏ´Ù.
+3. AhatDummyServerë¥¼ ì‹¤í–‰í•œë‹¤ ë’¤ì— í¬íŠ¸ ì£¼ì†Œë¥¼ ë„£ì–´ì£¼ë©´ ë˜ê³  í¬íŠ¸ëŠ” ì—¬ëŸ¬ ê°œë¥¼ ì‚¬ìš© ê°€ëŠ¥í•˜ë‹¤.
 ex : [root@localhost dummyserver]# ./AhatDummyServer 8887 8888 8889
 
 
-Æ÷Æ®º°·Î ½º·¹µå°¡ »ý¼ºµÇ¸ç °¢ ½º·¹µåÀÇ µ¿ÀÛÀº Æ÷Æ®ÁÖ¼Ò¸¸ ´Ù¸¦ »Ó ¸ðµÎ °°´Ù.
+í˜„ìž¬ë¡œì¨ëŠ” í¬íŠ¸ë³„ë¡œ ìŠ¤ë ˆë“œê°€ ìƒì„±ë˜ë©° ê° ìŠ¤ë ˆë“œì˜ ë™ìž‘ì€ í¬íŠ¸ì£¼ì†Œë§Œ ë‹¤ë¥¼ ë¿ ëª¨ë‘ ê°™ë‹¤.
 
-¾Æ·¡´Â API Ãß°¡ÆÄÀÏ¿¡ µé¾î°¥ µ¥ÀÌÅÍ »ùÇÃÀÌ¸ç 
-¾Æ·¡Ã»·³ Çì´õ¸¦ ³Ö¾îÁÖÁö ¾ÊÀ¸¸é http response·Î½á µ¿ÀÛÇÏÁö ¾Ê´Â´Ù.
+ì•„ëž˜ëŠ” API ì¶”ê°€íŒŒì¼ì— ë“¤ì–´ê°ˆ ë°ì´í„° ìƒ˜í”Œì´ë©° 
+ì•„ëž˜ì²­ëŸ¼ í—¤ë”ë¥¼ ë„£ì–´ì£¼ì§€ ì•Šìœ¼ë©´ http responseë¡œì¨ ë™ìž‘í•˜ì§€ ì•ŠëŠ”ë‹¤.
 
 HTTP/1.1 200 OK
 Accept: *
