@@ -230,11 +230,11 @@ std::string getFileData(std::string filepath, int port)
 
 			if(name.compare("#header-code") == 0)
 			{
-
+				message.setHeaderCode(value);
 			}
 			else if(name.compare("#header-content-type") == 0)
 			{
-
+				message.setHeaderContentType(value);
 			}
 		}
 		else if(line.find("#body") != std::string::npos && line.find("=") != std::string::npos)
@@ -250,6 +250,10 @@ std::string getFileData(std::string filepath, int port)
 			{
 				message.setBodyType(value);
 			}
+			else if(name.find("#body-function-param") != std::string::npos)
+			{
+				message.setBodyFunctionParam(value);
+			}
 			else if(name.compare("#body-file") == 0)
 			{
 				message.setBodyFile(value);
@@ -261,10 +265,6 @@ std::string getFileData(std::string filepath, int port)
 			else if(name.compare("#body-function-param_num") == 0)
 			{
 		//		message.setBodyFunctionParamNum(value);
-			}
-			else if(name.find("#body-function-param") != std::string::npos)
-			{
-				message.setBodyFunctionParam(value);
 			}
 		}
 		else if(line.find("#") == std::string::npos)

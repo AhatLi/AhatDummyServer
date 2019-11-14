@@ -33,6 +33,7 @@ public:
 	void addBodyText(std::string value);
 
 	std::string getMessage();
+	std::string getHeader(int bodyLength);
 };
 
 #endif

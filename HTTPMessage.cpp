@@ -71,6 +71,7 @@ void HTTPMessage::addBodyText(std::string value)
 
 std::string HTTPMessage::getMessage()
 {
+	std::string message = "";
 	if(body_type.compare("python3.8") == 0)
 	{
 
@@ -84,45 +85,44 @@ std::string HTTPMessage::getMessage()
 		/* raw */
 	}
 	
+	message += getHeader(body_text.length());
+	message += body_text;
+	
+	return message;
+}
 
-
-
-
-
-
-
-	std::string message = "HTTP/1.1 ";
-	message += header_code;
+std::string HTTPMessage::getHeader(int bodyLength)
+{
+	std::string header = "HTTP/1.1 ";
+	header += header_code;
 
 	if(!header_title.empty())
 	{
-		message += " ";
-		message += header_title;
+		header += " ";
+		header += header_title;
 	}
 	else if(!header_code.compare("200"))
 	{
-		message += " OK";
+		header += " OK";
 	}
 	else if(!header_code.compare("400"))
 	{
-		message += " Bad Request";
+		header += " Bad Request";
 	}
 
-	message += "\r\nAccept: *\r\nConnection: close\r\nContent-Type: ";
+	header += "\r\nAccept: *\r\nConnection: close\r\nContent-Type: ";
 	if(header_contentType.compare("") == 0)
 	{
-		message += "text/html;charset=UTF-8";
+		header += "text/html;charset=UTF-8";
 	}
 	else
 	{
-		message += header_contentType;
+		header += header_contentType;
 	}
 	
-	message += "\r\nContent-Length: ";
-	message += std::to_string(body_text.length());
-	message += "\r\n\r\n";
+	header += "\r\nContent-Length: ";
+	header += std::to_string(bodyLength);
+	header += "\r\n\r\n";
 
-	message += body_text;
-
-	return message;
+	return header;
 }
