@@ -196,11 +196,6 @@ std::string getFileData(std::string filepath, int port)
 		}
 		line = trim(line);
 
-		if(line.find("#") != std::string::npos)
-		{
-			line = line.substr(0, line.find("#"));
-		}
-
 		if(in == false && line.find("#if") != std::string::npos)
 		{
 			std::istringstream sss(line);
@@ -281,9 +276,9 @@ std::string getFileData(std::string filepath, int port)
 			/* error */
 		}
 		
-		data = message.getMessage();
 	}
 
+	data = message.getMessage();
 	return data;
 }
 

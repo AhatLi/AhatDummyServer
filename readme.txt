@@ -51,8 +51,7 @@ Content-Length:18
 	#body-file=test.py
 	#body-function=func1
 	#body-function-param_num=2
-	#body-function-param1="string"
-	#body-function-param2=13
+	#body-function-param="string",55
 #end
 #if port 6000
 	#header-code=404
@@ -63,7 +62,6 @@ file not found
 	#header-content-type=text
 	#body-type=raw
 텍스트 시작부터 끝까지 body로 친다
-설마 #} 라는 텍스트가 필요한 body가 있지는 않겠지
 
-있을수도 있겠지만 나중에 \#} 이런식으로 해놔야겠다.
+이렇게 공백도 다 바디임
 #end

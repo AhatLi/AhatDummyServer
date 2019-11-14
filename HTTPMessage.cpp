@@ -101,19 +101,23 @@ std::string HTTPMessage::getMessage()
 	}
 	else if(!header_code.compare("200"))
 	{
-		header_title = " OK";
+		message += " OK";
 	}
 	else if(!header_code.compare("400"))
 	{
-		header_title = " Bad Request";
+		message += " Bad Request";
 	}
 
-	message += "\r\nAccept: *\r\nConnection: close";
-	if(header_contentType.compare("") != 0)
+	message += "\r\nAccept: *\r\nConnection: close\r\nContent-Type: ";
+	if(header_contentType.compare("") == 0)
 	{
-		message += "\r\nContent-Type: ";
+		message += "text/html;charset=UTF-8";
+	}
+	else
+	{
 		message += header_contentType;
 	}
+	
 	message += "\r\nContent-Length: ";
 	message += std::to_string(body_text.length());
 	message += "\r\n\r\n";
