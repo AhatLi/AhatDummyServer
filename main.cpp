@@ -4,11 +4,18 @@
 #include <vector>
 #include <thread>
 #include <sys/resource.h>
+#include <python3.8/Python.h>
 
 #include "DummyServer.h"
 
 int main(int argc, char *argv[]) 
 {
+    Py_Initialize();
+    PyRun_SimpleString("print ('Hello, world!')");
+
+    Py_Finalize();
+
+
 	struct rlimit lim;
 	getrlimit(RLIMIT_CORE, &lim);
 	lim.rlim_cur = lim.rlim_max;

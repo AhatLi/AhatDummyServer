@@ -1,4 +1,5 @@
 #include "DummyServer.h"
+#include "HTTPMessage.h"
 
 int DummyServer(int port) 
 {
@@ -52,6 +53,22 @@ int DummyServer(int port)
 	close(listen_sock);
 }
 
+std::string trim(std::string str)
+{
+	int n; 
+	n = str.find_first_not_of(" \t"); 
+	if ( n != std::string::npos ) 
+	{
+		str.replace(0, n,""); 
+	}
+	n = str.find_last_not_of(" \t"); 
+	if ( n != std::string::npos )
+	{
+		str.replace(n+1, str.length()-n,""); 
+	}
+	return str;
+}
+
 int client_connect(int client_sock, int port)
 {
 	char buf[4096];
@@ -60,7 +77,7 @@ int client_connect(int client_sock, int port)
 	buf[re] = '\0';	
 		
 	std::cout << port << " port data request\n" << buf << "\n\n";
-	std::string result = makeResult(buf);
+	std::string result = makeResult(buf, port);
 	std::cout << "response \n" << result << "\n";
 	send(client_sock, result.c_str(), result.length(), 0);
 	close(client_sock);
@@ -68,7 +85,7 @@ int client_connect(int client_sock, int port)
 	return 0;
 }
 
-std::string makeResult(char* msg)
+std::string makeResult(char* msg, int port)
 {	
 	std::string result;
 	std::string header;
@@ -131,16 +148,17 @@ std::string makeResult(char* msg)
 						//지금은 body 파싱은 하지 않겠음
 	
 //	result = makeHeader(getFileData(path));	//파일에 헤더정보까지 직접 쓰도록
-	result = getFileData(path);
+	result = getFileData(path, port);
 	return result;
 }
 
-std::string getFileData(std::string filepath)
+std::string getFileData(std::string filepath, int port)
 {
 	int fd;
 	char buf[129];
 	int num;
 	std::string data = "";
+	std::string body = "";
 	fd = open(filepath.c_str(), O_RDONLY);
 	if(fd == -1)
 	{
@@ -154,6 +172,118 @@ std::string getFileData(std::string filepath)
 	}
 
 	close(fd);
+
+	std::istringstream ss(data);
+	std::string line;
+
+	if(!std::getline(ss, line, '\n'))
+	{
+		return std::string();
+	}
+
+	if(line.compare("#script") != 0)
+	{
+		return data;
+	}
+
+	bool in = false;
+	HTTPMessage message;
+	while(std::getline(ss, line, '\n'))
+	{
+		if(line.find("//") != std::string::npos)
+		{
+			line = line.substr(0, line.find("//"));
+		}
+		line = trim(line);
+
+		if(line.find("#") != std::string::npos)
+		{
+			line = line.substr(0, line.find("#"));
+		}
+
+		if(in == false && line.find("#if") != std::string::npos)
+		{
+			std::istringstream sss(line);
+			std::string tmp = "";
+			std::getline(sss, tmp, ' ');
+			std::getline(sss, tmp, ' ');
+			if(tmp.compare("port") == 0)
+			{
+				std::getline(sss, tmp, ' ');
+				if(tmp.compare("all") == 0 || tmp.compare(std::to_string(port)) == 0)
+				{
+					in = true;
+				}
+			}
+		}
+		else if(in == false)
+		{
+			continue;
+		}
+		else if(line.find("#end") != std::string::npos)
+		{
+			in = false;
+		}
+		else if(line.find("#header") != std::string::npos && line.find("=") != std::string::npos)
+		{
+			std::istringstream sss(line);
+			std::string name = "";
+			std::string value = "";
+
+			std::getline(sss, name, '=');
+			std::getline(sss, value, '=');
+
+			if(name.compare("#header-code") == 0)
+			{
+
+			}
+			else if(name.compare("#header-content-type") == 0)
+			{
+
+			}
+		}
+		else if(line.find("#body") != std::string::npos && line.find("=") != std::string::npos)
+		{
+			std::istringstream sss(line);
+			std::string name = "";
+			std::string value = "";
+
+			std::getline(sss, name, '=');
+			std::getline(sss, value, '=');
+
+			if(name.compare("#body-type") == 0)
+			{
+				message.setBodyType(value);
+			}
+			else if(name.compare("#body-file") == 0)
+			{
+				message.setBodyFile(value);
+			}
+			else if(name.compare("#body-function") == 0)
+			{
+				message.setBodyFunction(value);
+			}
+			else if(name.compare("#body-function-param_num") == 0)
+			{
+		//		message.setBodyFunctionParamNum(value);
+			}
+			else if(name.find("#body-function-param") != std::string::npos)
+			{
+				message.setBodyFunctionParam(value);
+			}
+		}
+		else if(line.find("#") == std::string::npos)
+		{
+			message.addBodyText(line);
+		}
+		else
+		{
+			/* error */
+		}
+		
+		data = message.getMessage();
+	}
+
 	return data;
 }
 

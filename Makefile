@@ -1,10 +1,10 @@
 CC = g++
 
-INCLUDEDIR = 
-LIBDIR = 
-LIBS = -pthread
+INCLUDEDIR = -I/usr/include/python3.8
+LIBDIR = -L/usr/lib/python3.8/config-x86_64-linux-gnu 
+LIBS = -lpthread -lpython3.8
 ETC = -std=gnu++0x -g
-OBJS = main.o DummyServer.o
+OBJS = main.o DummyServer.o HTTPMessage.o
 TARGET = AhatDummyServer
 
 all : ${TARGET}
