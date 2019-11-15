@@ -1,9 +1,10 @@
 #include "DummyServer.h"
 #include "HTTPMessage.h"
+#include "ahatlogger.h"
 
 int DummyServer(int port) 
 {
-	std::cout<<port <<" thread is start!\n";
+	AhatLogger::INFO(CODE, "%d thread is start!", port);
 	int retval = 0;
 	int client_sock = 0;  
 	struct sockaddr_in clientaddr;
@@ -12,7 +13,7 @@ int DummyServer(int port)
 	int listen_sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (listen_sock == -1) 
 	{
-		std::cout << port << " port socket error\n";
+		AhatLogger::ERROR(CODE, "%d port socket error", port);
 		return 0;
 	}
 
@@ -25,14 +26,14 @@ int DummyServer(int port)
 	auto l = bind(listen_sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 	if (retval == -1) 
 	{
-		std::cout << port << " port socket error\n";
+		AhatLogger::ERROR(CODE, "%d port socket error", port);
 		return 0;
 	}
 
 	retval = listen(listen_sock, SOMAXCONN);
 	if (retval == -1) 
 	{
-		std::cout << port << " port listen error\n";
+		AhatLogger::ERROR(CODE, "%d port listen error", port);
 		return 0;
 	}
 
@@ -42,7 +43,7 @@ int DummyServer(int port)
 		client_sock = accept(listen_sock, (struct sockaddr *)&clientaddr, &addrlen);
 		if (client_sock == -1)  
 		{
-			std::cout << port << " port connect error\n";
+			AhatLogger::ERROR(CODE, "%d port connect error", port);
 			return 0;
 		}
 		
@@ -76,9 +77,9 @@ int client_connect(int client_sock, int port)
 	int re = recv(client_sock, buf, 4096, 0);
 	buf[re] = '\0';	
 		
-	std::cout << port << " port data request\n" << buf << "\n\n";
+	AhatLogger::INFO(CODE, "data request\n%s", buf);
 	std::string result = makeResult(buf, port);
-	std::cout << "response \n" << result << "\n";
+	AhatLogger::INFO(CODE, "data response\n%s", result.c_str());
 	send(client_sock, result.c_str(), result.length(), 0);
 	close(client_sock);
 	
@@ -162,7 +163,7 @@ std::string getFileData(std::string filepath, int port)
 	fd = open(filepath.c_str(), O_RDONLY);
 	if(fd == -1)
 	{
-		std::cout<<filepath<<" file not found!\n";
+		AhatLogger::ERROR(CODE, "%s  file not found!", filepath);
 		return data;
     }
 	while((num = read(fd, buf, 128)) > 0) 

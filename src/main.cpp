@@ -8,6 +8,7 @@
 #include <python3.8/Python.h>
 
 #include "DummyServer.h"
+#include "ahatlogger.h"
 
 int main(int argc, char *argv[]) 
 {
@@ -21,10 +22,14 @@ int main(int argc, char *argv[])
 	getrlimit(RLIMIT_CORE, &lim);
 	lim.rlim_cur = lim.rlim_max;
 	setrlimit(RLIMIT_CORE, &lim);
+
+	AhatLogger::setting("", "AhatDummyServer", 0);
+	AhatLogger::start();
+
 	
 	if(argc < 2)
 	{
-		std::cout<<"insert port number\n";
+		AhatLogger::INFO(CODE, "insert port number");
 		return 0;
 	}
 	
@@ -39,13 +44,14 @@ int main(int argc, char *argv[])
 		
 		if(a < 0 || a > 65535)
 		{
-			std::cout<<a<<" is bad request!\n";
+			AhatLogger::ERROR(CODE, "%d is bad request!", a);
 			return 0;
 		}
 		//추후 스레드 관리를 위하여 vector에 저장
 		threads.push_back(std::thread(DummyServer, a));
 	}
 	
+	AhatLogger::INFO(CODE, "AhatDummyServer start success");
 	while(1)
 	{
 		;

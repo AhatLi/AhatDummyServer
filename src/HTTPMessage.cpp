@@ -109,9 +109,13 @@ std::string HTTPMessage::getHeader(int bodyLength)
 	{
 		header += " Bad Request";
 	}
+	else if(!header_code.compare("404"))
+	{
+		header += " File Not Found";
+	}
 
 	header += "\r\nAccept: *\r\nConnection: close\r\nContent-Type: ";
-	if(!header_contentType.empty())
+	if(header_contentType.empty())
 	{
 		header += "text/html;charset=UTF-8";
 	}
