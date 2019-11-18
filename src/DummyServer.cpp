@@ -163,7 +163,7 @@ std::string getFileData(std::string filepath, int port)
 	fd = open(filepath.c_str(), O_RDONLY);
 	if(fd == -1)
 	{
-		AhatLogger::ERROR(CODE, "%s  file not found!", filepath.c_str);
+		AhatLogger::ERROR(CODE, "%s  file not found!", filepath.c_str());
 		return data;
     }
 	while((num = read(fd, buf, 128)) > 0) 
@@ -216,9 +216,10 @@ std::string getFileData(std::string filepath, int port)
 		{
 			continue;
 		}
-		else if(line.find("#end") != std::string::npos)
+		else if(in == true && line.find("#end") != std::string::npos)
 		{
 			in = false;
+			break;
 		}
 		else if(line.find("#header") != std::string::npos && line.find("=") != std::string::npos)
 		{
@@ -251,21 +252,13 @@ std::string getFileData(std::string filepath, int port)
 			{
 				message.setBodyType(value);
 			}
-			else if(name.find("#body-function-param") != std::string::npos)
+			else if(name.find("#body-param") != std::string::npos)
 			{
-				message.setBodyFunctionParam(value);
+				message.setBodyParam(value);
 			}
 			else if(name.compare("#body-file") == 0)
 			{
 				message.setBodyFile(value);
-			}
-			else if(name.compare("#body-function") == 0)
-			{
-				message.setBodyFunction(value);
-			}
-			else if(name.compare("#body-function-param_num") == 0)
-			{
-		//		message.setBodyFunctionParamNum(value);
 			}
 		}
 		else if(line.find("#") == std::string::npos)
@@ -282,22 +275,3 @@ std::string getFileData(std::string filepath, int port)
 	data = message.getMessage();
 	return data;
 }
-
-/*
-std::string makeHeader(std::string body)
-{
-	std::string result;
-	std::string header;
-	
-	header += "HTTP/1.1 200 OK\r\n";
-	header += "Accept: *\r\n";
-	header += "Connection: close\r\n";
-	header += "Content-Type: application/json\r\n";
-	char buf[66289];
-	sprintf(buf, "Content-Length:%d\r\n\r\n%s", body.length(), body.c_str());
-	result = header;
-	result += buf;
-	
-	return result;
-}
-*/

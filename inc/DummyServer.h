@@ -21,12 +21,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-/*
-string makeBody_HitcountSize(string group);
-string makeBody_HitcountList(string group);
-string makeBody_Post();
-string makeBody_FileInfo(string filename);
-*/
 std::string getFileData(std::string filepath, int port);
 std::string makeResult(char* msg, int port);
 std::string makeHeader(std::string body);

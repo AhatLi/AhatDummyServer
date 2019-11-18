@@ -10,9 +10,7 @@ HTTPMessage::HTTPMessage()
 
     body_type = "raw";
     body_file = "";
-    body_function = "";
-    body_function_param_num = 0;
-    body_function_param = "";
+    body_param = "";
     body_text = "";
 }
 
@@ -46,19 +44,9 @@ void HTTPMessage::setBodyFile(std::string value)
 	body_file = value;
 }
 
-void HTTPMessage::setBodyFunction(std::string value)
+void HTTPMessage::setBodyParam(std::string value)
 {
-	body_function = value;
-}
-
-void HTTPMessage::setBodyFunctionParamNum(int value)
-{
-	body_function_param_num = value;
-}
-
-void HTTPMessage::setBodyFunctionParam(std::string value)
-{
-	body_function_param = value;
+	body_param = value;
 }
 
 void HTTPMessage::addBodyText(std::string value)
@@ -73,17 +61,24 @@ void HTTPMessage::addBodyText(std::string value)
 std::string HTTPMessage::getMessage()
 {
 	std::string message = "";
-	if(body_type.compare("python3.8") == 0)
+	if(body_type.compare("python") == 0)
 	{
-
-	}
-	else if(body_type.compare("python3.7") == 0)
-	{
-
+		if(body_file.empty())
+		{
+			header_code = "404";
+		}
+		else
+		{
+			getMessagePython();
+		}
 	}
 	else if(body_type.compare("shell") == 0)
 	{
-		if(body_file.empty() && !body_text.empty())
+		if(body_file.empty() && body_text.empty())
+		{
+			header_code = "404";
+		}
+		else if(body_file.empty() && !body_text.empty())
 		{
 			getMessageShellText();
 		}
@@ -197,4 +192,32 @@ bool HTTPMessage::getMessageShellText()
 	pclose( fp);
 
 	body_text = data;
+}
+
+bool HTTPMessage::getMessagePython()
+{
+	FILE *fp;
+	char buf[128];
+	std::string file_data = "";
+	std::string data = "";
+
+	file_data = "python ";
+	file_data += body_file;
+	file_data += " ";
+	file_data += body_param;
+
+	fp = popen(file_data.c_str(), "r");
+	if ( NULL == fp)
+	{
+		AhatLogger::ERROR(CODE, "%s script error", body_file);
+	}
+
+	while(fgets(buf, 127, fp))
+		data += buf;
+
+	pclose(fp);
+
+	body_text = data;
+
+	return true;
 }

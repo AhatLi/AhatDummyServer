@@ -16,14 +16,14 @@ private:
     
     std::string body_type;
     std::string body_file;
-    std::string body_function;
-    int body_function_param_num;
-    std::string body_function_param;
+    std::string body_param;
 
     std::string body_text;
 
 	bool getMessageShell();
 	bool getMessageShellText();
+
+	bool getMessagePython();
 public:
     HTTPMessage();
 	void setHeaderCode(std::string value);
@@ -33,9 +33,7 @@ public:
 
 	void setBodyType(std::string value);
 	void setBodyFile(std::string value);
-	void setBodyFunction(std::string value);
-	void setBodyFunctionParamNum(int value);
-	void setBodyFunctionParam(std::string value);
+	void setBodyParam(std::string value);
 	void addBodyText(std::string value);
 
 	std::string getMessage();

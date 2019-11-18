@@ -1,7 +1,22 @@
 #script
-#if port all
-	#body-type=raw
+#if port 8000
+	#body-type=shell
+echo 1234
+#end
+#if port 8001
+	#body-type=shell
+	#body-file=test.sh
+#end
+#if port 8002
+	#body-type=python
+	#body-file=test.py
+#end
+#if port 8003
+	#header-code=200
+	#header-content-type=text/json
+        #body-type=raw
 텍스트 시작부터 끝까지 body로 친다
 
 이렇게 공백도 다 바디임
 #end
+
