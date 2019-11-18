@@ -1,4 +1,5 @@
 #include "HTTPMessage.h"
+#include "ahatlogger.h"
 
 HTTPMessage::HTTPMessage()
 {
@@ -80,6 +81,17 @@ std::string HTTPMessage::getMessage()
 	{
 
 	}
+	else if(body_type.compare("shell") == 0)
+	{
+		if(body_file.empty() && !body_text.empty())
+		{
+			getMessageShellText();
+		}
+		else
+		{
+			getMessageShell();
+		}
+	}
 	else
 	{
 		/* raw */
@@ -129,4 +141,60 @@ std::string HTTPMessage::getHeader(int bodyLength)
 	header += "\r\n\r\n";
 
 	return header;
+}
+
+bool HTTPMessage::getMessageShell()
+{
+	int fd = 0;
+	FILE *fp;
+	char buf[128];
+	int num = 0;
+	std::string shell_data = "";
+	std::string data = "";
+	fd = open(body_file.c_str(), O_RDONLY);
+	if(fd == -1)
+	{
+		AhatLogger::ERROR(CODE, "%s script file not found!", body_file);
+    }
+	while((num = read(fd, buf, 127)) > 0) 
+	{
+		buf[num] = '\0';
+		shell_data += buf;
+	}
+
+	close(fd);
+
+	fp = popen(shell_data.c_str(), "r");
+	if ( NULL == fp)
+	{
+		AhatLogger::ERROR(CODE, "%s script error", body_file);
+	}
+
+	while(fgets(buf, 127, fp))
+		data += buf;
+
+	pclose( fp);
+
+	body_text = data;
+}
+
+bool HTTPMessage::getMessageShellText()
+{
+	FILE *fp;
+	char buf[128];
+	int num;
+	std::string data = "";
+
+	fp = popen(body_text.c_str(), "r");
+	if ( NULL == fp)
+	{
+		AhatLogger::ERROR(CODE, "%s script error", body_file);
+	}
+
+	while(fgets(buf, 127, fp))
+		data += buf;
+
+	pclose( fp);
+
+	body_text = data;
 }

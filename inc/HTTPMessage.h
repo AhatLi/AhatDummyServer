@@ -3,6 +3,8 @@
 
 
 #include <iostream>
+#include <unistd.h>
+#include <fcntl.h>
 
 class HTTPMessage
 {
@@ -19,6 +21,9 @@ private:
     std::string body_function_param;
 
     std::string body_text;
+
+	bool getMessageShell();
+	bool getMessageShellText();
 public:
     HTTPMessage();
 	void setHeaderCode(std::string value);

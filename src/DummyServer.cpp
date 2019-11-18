@@ -163,7 +163,7 @@ std::string getFileData(std::string filepath, int port)
 	fd = open(filepath.c_str(), O_RDONLY);
 	if(fd == -1)
 	{
-		AhatLogger::ERROR(CODE, "%s  file not found!", filepath);
+		AhatLogger::ERROR(CODE, "%s  file not found!", filepath.c_str);
 		return data;
     }
 	while((num = read(fd, buf, 128)) > 0) 
