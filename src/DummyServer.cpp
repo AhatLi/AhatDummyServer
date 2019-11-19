@@ -1,6 +1,5 @@
 #include "DummyServer.h"
 #include "HTTPMessage.h"
-#include "ahatlogger.h"
 
 int DummyServer(int port) 
 {
@@ -47,7 +46,7 @@ int DummyServer(int port)
 			return 0;
 		}
 		
-		std::thread t(client_connect, client_sock, port);
+		std::thread t(client_connect, client_sock, inet_ntoa(clientaddr.sin_addr), port);
 		t.detach();
 	}
 
@@ -70,23 +69,24 @@ std::string trim(std::string str)
 	return str;
 }
 
-int client_connect(int client_sock, int port)
+int client_connect(int client_sock, char* ip, int port)
 {
 	char buf[4096];
+	HTTPMessage message;
 	
 	int re = recv(client_sock, buf, 4096, 0);
 	buf[re] = '\0';	
+	InReqItem reqitem(ip, std::to_string(port), "", buf);
 		
-	AhatLogger::INFO(CODE, "data request\n%s", buf);
-	std::string result = makeResult(buf, port);
-	AhatLogger::INFO(CODE, "data response\n%s", result.c_str());
+	std::string result = makeResult(buf, port, message, reqitem);
 	send(client_sock, result.c_str(), result.length(), 0);
 	close(client_sock);
-	
+    AhatLogger::IN_REQ(CODE, reqitem, result);
+
 	return 0;
 }
 
-std::string makeResult(char* msg, int port)
+std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem)
 {	
 	std::string result;
 	std::string header;
@@ -94,7 +94,6 @@ std::string makeResult(char* msg, int port)
 	
 	char *saveptr1;
 	std::string pro;
-	std::string api;
 	std::string value;
 	
 	char* tok;
@@ -136,11 +135,31 @@ std::string makeResult(char* msg, int port)
 	{
         return "";
     }
-	api = tok;			//API 주소
+
+	path += tok;	//API 주소
+	reqitem.in_req_url = std::string(tok);
+
+	if(pro.compare("GET") == 0)
+	{
+		tok = strtok_r(NULL, "? \n/", &saveptr1);
+		if(strcmp(tok, "HTTP") != 0)
+		{
+			message.setBodyParam(std::string(tok));
+		}
+	}
+	else if(pro.compare("POST") == 0)
+	{
+		tok = strtok_r(NULL, "? \n/", &saveptr1);
+		if(strcmp(tok, "HTTP") != 0)
+		{
+			char* body = strstr(msg, "\r\n\r\n");
+			if(body != NULL && strlen(body) > 2)
+			{
+				message.setBodyParam(std::string(body + 2));
+			}
+		}
+	}
 	
-	path += api;
-	
-	tok = strtok_r(NULL, "? \n", &saveptr1);
 	if( !tok )
 	{
         return "";
@@ -149,11 +168,11 @@ std::string makeResult(char* msg, int port)
 						//지금은 body 파싱은 하지 않겠음
 	
 //	result = makeHeader(getFileData(path));	//파일에 헤더정보까지 직접 쓰도록
-	result = getFileData(path, port);
+	result = getFileData(path, port, message);
 	return result;
 }
 
-std::string getFileData(std::string filepath, int port)
+std::string getFileData(std::string filepath, int port, HTTPMessage message)
 {
 	int fd;
 	char buf[129];
@@ -164,7 +183,8 @@ std::string getFileData(std::string filepath, int port)
 	if(fd == -1)
 	{
 		AhatLogger::ERROR(CODE, "%s  file not found!", filepath.c_str());
-		return data;
+		message.setHeaderCode("404");
+		return message.getMessage();
     }
 	while((num = read(fd, buf, 128)) > 0) 
 	{
@@ -188,7 +208,6 @@ std::string getFileData(std::string filepath, int port)
 	}
 
 	bool in = false;
-	HTTPMessage message;
 	while(std::getline(ss, line, '\n'))
 	{
 		if(line.find("//") != std::string::npos)

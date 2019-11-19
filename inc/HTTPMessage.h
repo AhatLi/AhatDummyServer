@@ -24,6 +24,7 @@ private:
 	bool getMessageShellText();
 
 	bool getMessagePython();
+	std::string getBodyParamSpace();
 public:
     HTTPMessage();
 	void setHeaderCode(std::string value);

@@ -21,9 +21,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-std::string getFileData(std::string filepath, int port);
-std::string makeResult(char* msg, int port);
+#include "HTTPMessage.h"
+#include "ahatlogger.h"
+
+std::string getFileData(std::string filepath, int port, HTTPMessage message);
+std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem);
 std::string makeHeader(std::string body);
-int client_connect(int client_sock, int port);
+int client_connect(int client_sock, char* ip, int port);
 int DummyServer(int port);
 #endif

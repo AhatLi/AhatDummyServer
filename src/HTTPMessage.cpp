@@ -49,6 +49,18 @@ void HTTPMessage::setBodyParam(std::string value)
 	body_param = value;
 }
 
+std::string HTTPMessage::getBodyParamSpace()
+{
+	std::string tmp_text = body_param;
+	size_t start_pos = 0; 
+    while((start_pos = tmp_text.find("&", start_pos)) != std::string::npos)
+    {
+        tmp_text.replace(start_pos, 1, " ");
+        start_pos += 1;
+    }
+    return tmp_text;
+}
+
 void HTTPMessage::addBodyText(std::string value)
 {
 	if(!body_text.empty())
@@ -144,31 +156,24 @@ bool HTTPMessage::getMessageShell()
 	FILE *fp;
 	char buf[128];
 	int num = 0;
-	std::string shell_data = "";
+	std::string file_data = "";
 	std::string data = "";
-	fd = open(body_file.c_str(), O_RDONLY);
-	if(fd == -1)
-	{
-		AhatLogger::ERROR(CODE, "%s script file not found!", body_file);
-    }
-	while((num = read(fd, buf, 127)) > 0) 
-	{
-		buf[num] = '\0';
-		shell_data += buf;
-	}
 
-	close(fd);
+	file_data += "./";
+	file_data += body_file;
+	file_data += " ";
+	file_data += getBodyParamSpace();
 
-	fp = popen(shell_data.c_str(), "r");
+	fp = popen(file_data.c_str(), "r");
 	if ( NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s script error", body_file);
+		AhatLogger::ERROR(CODE, "%s script error", file_data);
 	}
 
 	while(fgets(buf, 127, fp))
 		data += buf;
 
-	pclose( fp);
+	pclose(fp);
 
 	body_text = data;
 }
@@ -189,7 +194,7 @@ bool HTTPMessage::getMessageShellText()
 	while(fgets(buf, 127, fp))
 		data += buf;
 
-	pclose( fp);
+	pclose(fp);
 
 	body_text = data;
 }
@@ -204,7 +209,7 @@ bool HTTPMessage::getMessagePython()
 	file_data = "python ";
 	file_data += body_file;
 	file_data += " ";
-	file_data += body_param;
+	file_data += getBodyParamSpace();
 
 	fp = popen(file_data.c_str(), "r");
 	if ( NULL == fp)
