@@ -6,7 +6,7 @@ OBJDIR = obj
 SRCDIR = src
 INCLUDEDIR = -I/usr/include/python3.8 -I$(INCDIR)
 LIBDIR = -L/usr/lib/python3.8/config-x86_64-linux-gnu -Llib
-LIBS = -lpthread -lpython3.8 -lahatlogger
+LIBS = -lpthread -lahatlogger
 ETC = -std=gnu++0x -g
 TARGET = AhatDummyServer
 

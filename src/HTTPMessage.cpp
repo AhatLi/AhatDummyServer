@@ -176,6 +176,8 @@ bool HTTPMessage::getMessageShell()
 	pclose(fp);
 
 	body_text = data;
+
+	return true;
 }
 
 bool HTTPMessage::getMessageShellText()
@@ -197,6 +199,8 @@ bool HTTPMessage::getMessageShellText()
 	pclose(fp);
 
 	body_text = data;
+
+	return true;
 }
 
 bool HTTPMessage::getMessagePython()
