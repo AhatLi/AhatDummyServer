@@ -2,7 +2,7 @@
 #define AHATLOGGER_H_
 
 /*
-Ahat Logger Version 1.0.0.QR2
+Ahat Logger Version 1.0.1.QR2
 */
 
 #include <iostream>
@@ -22,18 +22,20 @@ Ahat Logger Version 1.0.0.QR2
 
 #include <fcntl.h>
 #include <string.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include "ahatloggeritem.h"
 
-#ifdef __linux__
-#define __FILENAME__    __FILE__
+#ifdef _WIN32
+#include <tchar.h>
+#define strncpy(X, Y, Z) strncpy_s(X, Y, Z)
+#define __FILENAME__    strrchr(__FILE__, '\\') +1
+#elif __linux__
+#include <dirent.h>
 #define vsprintf_s(W, X, Y, Z) vsprintf(W, Y, Z)
 int _vscprintf (const char * format, va_list pargs);
-#else
-#define __FILENAME__    strrchr(__FILE__, '\\') +1
+#define __FILENAME__    __FILE__
 #endif
 
 #define CODE code(__FILENAME__, __FUNCTION__, __LINE__)
@@ -69,7 +71,7 @@ public:
 	static void stop();
 	
 	static void INFO(std::string src_file, const char* body, ...);
-	static void ERROR(std::string src_file, const char* body, ...);
+	static void ERR(std::string src_file, const char* body, ...);
 	static void DEBUG(std::string src_file, const char* body, ...);
 
 	static void CUSTOM(std::string src_file, std::string custom, const char* body, ...);
@@ -78,9 +80,9 @@ public:
 	static void RESPONSE(std::string src_file, std::string res_body, std::string res_code);
 
 	static void DB(std::string src_file, InDBtem db_req_item, std::string db_res_body);
-	static void DB_ERROR(std::string src_file, InDBtem db_req_item, std::string db_res_body);
+	static void DB_ERR(std::string src_file, InDBtem db_req_item, std::string db_res_body);
 	static void DB_DEBUG(std::string src_file, InDBtem db_req_item, std::string db_res_body);
-	static void DB_ERROR_DEBUG(std::string src_file, InDBtem db_req_item, std::string db_res_body);
+	static void DB_ERR_DEBUG(std::string src_file, InDBtem db_req_item, std::string db_res_body);
 	
 	static void IN_REQ(std::string src_file, InReqItem in_req_item, std::string in_res_body);
 	static void IN_REQ_ERR(std::string src_file, InReqItem in_req_item, std::string in_res_body);

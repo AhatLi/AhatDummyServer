@@ -3,8 +3,11 @@
 
 
 #include <iostream>
-#include <unistd.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#elif __linux__
+#include <unistd.h>
+#endif
 
 class HTTPMessage
 {
@@ -20,8 +23,13 @@ private:
 
     std::string body_text;
 
+#ifdef __linux__
 	bool getMessageShell();
 	bool getMessageShellText();
+#elif _WIN32
+	bool getMessageBatch();
+	bool getMessageBatchText();
+#endif
 
 	bool getMessagePython();
 	std::string getBodyParamSpace();

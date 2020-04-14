@@ -6,13 +6,26 @@ int DummyServer(int port)
 	AhatLogger::INFO(CODE, "%d thread is start!", port);
 	int retval = 0;
 	int client_sock = 0;  
-	struct sockaddr_in clientaddr;
 
+#ifdef _WIN32
+	WSADATA wsaData;
+	int addrlen;
+	SOCKADDR_IN clientaddr;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+	{
+		printf("winsock error!\n");
+		exit(1);
+	}
+	SOCKET listen_sock = socket(PF_INET, SOCK_STREAM, 0);
+#elif __linux__
+	struct sockaddr_in clientaddr;
 	socklen_t addrlen;
 	int listen_sock = socket(PF_INET, SOCK_STREAM, 0);
+#endif
+
 	if (listen_sock == -1) 
 	{
-		AhatLogger::ERROR(CODE, "%d port socket error", port);
+		AhatLogger::ERR(CODE, "%d port socket error", port);
 		return 0;
 	}
 
@@ -25,14 +38,14 @@ int DummyServer(int port)
 	auto l = bind(listen_sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
 	if (retval == -1) 
 	{
-		AhatLogger::ERROR(CODE, "%d port socket error", port);
+		AhatLogger::ERR(CODE, "%d port socket error", port);
 		return 0;
 	}
 
 	retval = listen(listen_sock, SOMAXCONN);
 	if (retval == -1) 
 	{
-		AhatLogger::ERROR(CODE, "%d port listen error", port);
+		AhatLogger::ERR(CODE, "%d port listen error", port);
 		return 0;
 	}
 
@@ -42,15 +55,33 @@ int DummyServer(int port)
 		client_sock = accept(listen_sock, (struct sockaddr *)&clientaddr, &addrlen);
 		if (client_sock == -1)  
 		{
-			AhatLogger::ERROR(CODE, "%d port connect error", port);
+			AhatLogger::ERR(CODE, "%d port connect error", port);
 			return 0;
 		}
-		
+
 		std::thread t(client_connect, client_sock, inet_ntoa(clientaddr.sin_addr), port);
 		t.detach();
 	}
 
-	close(listen_sock);
+	_close(listen_sock);
+}
+
+int closeOsSocket(int socket)
+{
+#ifdef _WIN32
+	return closesocket(socket);
+#elif __linux__
+	return close(listen_sock);
+#endif
+}
+
+char* strtok_all(char* _String, const char* _Delimiter, char** _Context)
+{
+#ifdef _WIN32
+	return strtok_s(_String, _Delimiter, _Context);
+#elif __linux__
+	return strtok_r(_String, _Delimiter, _Context);
+#endif
 }
 
 std::string trim(std::string str)
@@ -80,39 +111,49 @@ int client_connect(int client_sock, char* ip, int port)
 		
 	std::string result = makeResult(buf, port, message, reqitem);
 	send(client_sock, result.c_str(), result.length(), 0);
-	close(client_sock);
+	_close(client_sock);
     AhatLogger::IN_REQ(CODE, reqitem, result);
 
 	return 0;
 }
 
 std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem)
-{	
+{
 	std::string result;
 	std::string header;
 	std::string body;
-	
-	char *saveptr1;
+
+	char* saveptr1;
 	std::string pro;
+	std::string api;
 	std::string value;
-	
+
 	char* tok;
 	bool isHttp = false;
-	
+
 	std::string path;
+
+	/*
+	#ifdef _WIN32
+	wchar_t tmp[256];
+	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
+	std::wstring ws(tmp);
+	std::string buf(ws.begin(), ws.end());
+	#elif __linux__
 	char buf[256];
 	int len = readlink("/proc/self/exe", buf, 256);
 	buf[len] = '\0';
-	
-	path = buf;
-	path += "API";	
-	
-	tok = strtok_r(msg, " ", &saveptr1);
-	
-	if( !tok )
+	#endif
+	*/
+	path = "C:\\Users\\ahata\\Desktop\\share\\AhatDummyServer\\x64\\Debug\\test";
+	//	path += "API";	
+
+	tok = strtok_all(msg, " ", &saveptr1);
+
+	if (!tok)
 	{
-        return "";
-    }
+		return "";
+	}
 	pro = tok;
 	
 	if	//HTTP 프로토콜인지를 확인함 현재는 사용되지 않음
@@ -130,7 +171,7 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 		isHttp = true;
 	}
 	
-	tok = strtok_r(NULL, "? \n", &saveptr1);
+	tok = strtok_all(NULL, "? \n", &saveptr1);
 	if( !tok )
 	{
         return "";
@@ -141,7 +182,7 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 
 	if(pro.compare("GET") == 0)
 	{
-		tok = strtok_r(NULL, "? \n/", &saveptr1);
+		tok = strtok_all(NULL, "? \n/", &saveptr1);
 		if(strcmp(tok, "HTTP") != 0)
 		{
 			message.setBodyParam(std::string(tok));
@@ -149,7 +190,7 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 	}
 	else if(pro.compare("POST") == 0)
 	{
-		tok = strtok_r(NULL, "? \n/", &saveptr1);
+		tok = strtok_all(NULL, "? \n/", &saveptr1);
 		if(strcmp(tok, "HTTP") != 0)
 		{
 			char* body = strstr(msg, "\r\n\r\n");
@@ -179,10 +220,14 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 	int num;
 	std::string data = "";
 	std::string body = "";
+#ifdef _WIN32
+	_sopen_s(&fd, filepath.c_str(), _O_WRONLY, _SH_DENYNO, _S_IWRITE);
+#elif __linux__
 	fd = open(filepath.c_str(), O_RDONLY);
+#endif
 	if(fd == -1)
 	{
-		AhatLogger::ERROR(CODE, "%s  file not found!", filepath.c_str());
+		AhatLogger::ERR(CODE, "%s  file not found!", filepath.c_str());
 		message.setHeaderCode("404");
 		return message.getMessage();
     }
@@ -192,7 +237,7 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 		data += buf;
 	}
 
-	close(fd);
+	_close(fd);
 
 	std::istringstream ss(data);
 	std::string line;

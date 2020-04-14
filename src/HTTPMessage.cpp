@@ -84,13 +84,14 @@ std::string HTTPMessage::getMessage()
 			getMessagePython();
 		}
 	}
-	else if(body_type.compare("shell") == 0)
+#ifdef __linux__
+	else if (body_type.compare("shell") == 0)
 	{
-		if(body_file.empty() && body_text.empty())
+		if (body_file.empty() && body_text.empty())
 		{
 			header_code = "404";
 		}
-		else if(body_file.empty() && !body_text.empty())
+		else if (body_file.empty() && !body_text.empty())
 		{
 			getMessageShellText();
 		}
@@ -98,6 +99,23 @@ std::string HTTPMessage::getMessage()
 		{
 			getMessageShell();
 		}
+	}
+#elif _WIN32
+	else if (body_type.compare("batch") == 0)
+	{
+		if (body_file.empty() && body_text.empty())
+		{
+			header_code = "404";
+		}
+		else if (body_file.empty() && !body_text.empty())
+		{
+			getMessageBatchText();
+		}
+		else
+		{
+			getMessageBatch();
+		}
+#endif
 	}
 	else
 	{
@@ -150,10 +168,11 @@ std::string HTTPMessage::getHeader(int bodyLength)
 	return header;
 }
 
+#ifdef __linux__
 bool HTTPMessage::getMessageShell()
 {
 	int fd = 0;
-	FILE *fp;
+	FILE* fp;
 	char buf[128];
 	int num = 0;
 	std::string file_data = "";
@@ -165,12 +184,12 @@ bool HTTPMessage::getMessageShell()
 	file_data += getBodyParamSpace();
 
 	fp = popen(file_data.c_str(), "r");
-	if ( NULL == fp)
+	if (NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s script error", file_data);
+		AhatLogger::ERROR(CODE, "%s shell file error", file_data);
 	}
 
-	while(fgets(buf, 127, fp))
+	while (fgets(buf, 127, fp))
 		data += buf;
 
 	pclose(fp);
@@ -182,18 +201,18 @@ bool HTTPMessage::getMessageShell()
 
 bool HTTPMessage::getMessageShellText()
 {
-	FILE *fp;
+	FILE* fp;
 	char buf[128];
 	int num;
 	std::string data = "";
 
 	fp = popen(body_text.c_str(), "r");
-	if ( NULL == fp)
+	if (NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s script error", body_file);
+		AhatLogger::ERROR(CODE, "%s shell text error", body_file);
 	}
 
-	while(fgets(buf, 127, fp))
+	while (fgets(buf, 127, fp))
 		data += buf;
 
 	pclose(fp);
@@ -202,6 +221,60 @@ bool HTTPMessage::getMessageShellText()
 
 	return true;
 }
+#elif _WIN32
+bool HTTPMessage::getMessageBatch()
+{
+	int fd = 0;
+	FILE* fp;
+	char buf[128];
+	int num = 0;
+	std::string file_data = "";
+	std::string data = "";
+
+	file_data += "./";
+	file_data += body_file;
+	file_data += " ";
+	file_data += getBodyParamSpace();
+
+	fp = _popen(file_data.c_str(), "r");
+	if (NULL == fp)
+	{
+		AhatLogger::ERR(CODE, "%s batch file error", file_data);
+	}
+
+	while (fgets(buf, 127, fp))
+		data += buf;
+
+	_pclose(fp);
+
+	body_text = data;
+
+	return true;
+}
+
+bool HTTPMessage::getMessageBatchText()
+{
+	FILE* fp;
+	char buf[128];
+	int num;
+	std::string data = "";
+
+	fp = _popen(body_text.c_str(), "r");
+	if (NULL == fp)
+	{
+		AhatLogger::ERR(CODE, "%s batch text error", body_file);
+	}
+
+	while (fgets(buf, 127, fp))
+		data += buf;
+
+	_pclose(fp);
+
+	body_text = data;
+
+	return true;
+}
+#endif
 
 bool HTTPMessage::getMessagePython()
 {
@@ -215,16 +288,24 @@ bool HTTPMessage::getMessagePython()
 	file_data += " ";
 	file_data += getBodyParamSpace();
 
+#ifdef __linux__
 	fp = popen(file_data.c_str(), "r");
+#elif _WIN32
+	fp = _popen(file_data.c_str(), "r");
+#endif
 	if ( NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s script error", body_file);
+		AhatLogger::ERR(CODE, "%s script error", body_file);
 	}
 
 	while(fgets(buf, 127, fp))
 		data += buf;
 
+#ifdef __linux__
 	pclose(fp);
+#elif _WIN32
+	_pclose(fp);
+#endif
 
 	body_text = data;
 

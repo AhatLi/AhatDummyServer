@@ -4,25 +4,26 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <sys/resource.h>
 
 #include "DummyServer.h"
 #include "ahatlogger.h"
 
 int main(int argc, char *argv[]) 
 {
+#ifdef __linux__
 	struct rlimit lim;
 	getrlimit(RLIMIT_CORE, &lim);
 	lim.rlim_cur = lim.rlim_max;
 	setrlimit(RLIMIT_CORE, &lim);
+#endif
 
 	AhatLogger::setting("", "AhatDummyServer", 0);
 	AhatLogger::start();
-
 	
 	if(argc < 2)
 	{
 		AhatLogger::INFO(CODE, "insert port number");
+		AhatLogger::stop();
 		return 0;
 	}
 	
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
 		
 		if(a < 0 || a > 65535)
 		{
-			AhatLogger::ERROR(CODE, "%d is bad request!", a);
+			AhatLogger::ERR(CODE, "%d is bad request!", a);
 			return 0;
 		}
 		//추후 스레드 관리를 위하여 vector에 저장
@@ -49,6 +50,7 @@ int main(int argc, char *argv[])
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
-	
+
+	AhatLogger::stop();
 	return 0;
 }

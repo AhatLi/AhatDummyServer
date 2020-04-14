@@ -19,7 +19,7 @@ public:
 	std::string src_file;
 	int log_type;
 
-	virtual std::string message() = 0;
+	std::string message() {};
 };	
 
 class AhatLogItemInfo : public AhatLogItem
@@ -34,7 +34,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << body;
 	
 		return buf.str();
-	}
+	};
 };
 class AhatLogItemError : public AhatLogItem
 {
@@ -48,7 +48,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class AhatLogItemRequest : public AhatLogItem
@@ -66,7 +66,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << req_ip << "," << req_uri << "," << req_body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class AhatLogItemResponse : public AhatLogItem
@@ -82,7 +82,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << res_code << "," << res_body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class InDBtem
@@ -112,7 +112,7 @@ public:
 			<< "," << db_req_item.db_req_func << "," << db_req_item.db_req_body << "," << db_res_body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class AhatLogItemCustom : public AhatLogItem
@@ -127,7 +127,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class InReqItem
@@ -159,7 +159,7 @@ public:
 			<< "," << in_req_item.in_req_url << "," << in_req_item.in_req_time << "," << in_res_time << "," << in_req_item.in_req_body << "," << in_res_body;
 	
 		return buf.str();
-	}
+	};
 };
 
 class AhatLogItemDebug : public AhatLogItem
@@ -174,7 +174,7 @@ public:
 		buf << "," << src_file << "," << std::this_thread::get_id() << "," << body;
 	
 		return buf.str();
-	}
+	};
 };
 
 #endif
