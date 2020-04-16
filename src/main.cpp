@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
 		//추후 스레드 관리를 위하여 vector에 저장
 		threads.push_back(std::thread(DummyServer, a));
 	}
-	
 	AhatLogger::INFO(CODE, "AhatDummyServer start success");
+	std::cout << "AhatDummyServer start success\n";
 	while(1)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));

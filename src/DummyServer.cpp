@@ -4,6 +4,7 @@
 int DummyServer(int port) 
 {
 	AhatLogger::INFO(CODE, "%d thread is start!", port);
+	std::cout << port << "thread is start!\n";
 	int retval = 0;
 	int client_sock = 0;  
 
@@ -209,6 +210,7 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 						//지금은 body 파싱은 하지 않겠음
 	
 //	result = makeHeader(getFileData(path));	//파일에 헤더정보까지 직접 쓰도록
+	path = path.replace(path.find("/"), 1, "\\");
 	result = getFileData(path, port, message);
 	return result;
 }
