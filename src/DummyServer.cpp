@@ -1,6 +1,8 @@
 #include "DummyServer.h"
 #include "HTTPMessage.h"
 
+std::string apiPath = "";
+
 int DummyServer(int port) 
 {
 	AhatLogger::INFO(CODE, "%d thread is start!", port);
@@ -50,6 +52,19 @@ int DummyServer(int port)
 		return 0;
 	}
 
+#ifdef _WIN32
+	wchar_t tmp[260];
+	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
+	std::wstring ws(tmp);
+	std::string buf(ws.begin(), ws.end());
+	buf = buf.substr(0, buf.find_last_of("."));
+#elif __linux__
+	char buf[256];
+	int len = readlink("/proc/self/exe", buf, 256);
+	buf[len] = '\0';
+#endif
+	apiPath = buf + "API";
+
 	addrlen = sizeof(clientaddr);
 	while (1)
 	{
@@ -64,7 +79,7 @@ int DummyServer(int port)
 		t.detach();
 	}
 
-	_close(listen_sock);
+	closeOsSocket(listen_sock);
 }
 
 int closeOsSocket(int socket)
@@ -112,7 +127,7 @@ int client_connect(int client_sock, char* ip, int port)
 		
 	std::string result = makeResult(buf, port, message, reqitem);
 	send(client_sock, result.c_str(), result.length(), 0);
-	_close(client_sock);
+	closeOsSocket(client_sock);
     AhatLogger::IN_REQ(CODE, reqitem, result);
 
 	return 0;
@@ -131,29 +146,12 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 
 	char* tok;
 	bool isHttp = false;
-
-	std::string path;
-
-	/*
-	#ifdef _WIN32
-	wchar_t tmp[256];
-	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
-	std::wstring ws(tmp);
-	std::string buf(ws.begin(), ws.end());
-	#elif __linux__
-	char buf[256];
-	int len = readlink("/proc/self/exe", buf, 256);
-	buf[len] = '\0';
-	#endif
-	*/
-	path = "C:\\Users\\ahata\\Desktop\\share\\AhatDummyServer\\x64\\Debug\\test";
-	//	path += "API";	
-
 	tok = strtok_all(msg, " ", &saveptr1);
 
 	if (!tok)
 	{
-		return "";
+		message.setHeaderCode("404");
+		return message.getMessage();
 	}
 	pro = tok;
 	
@@ -175,10 +173,11 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 	tok = strtok_all(NULL, "? \n", &saveptr1);
 	if( !tok )
 	{
-        return "";
+		message.setHeaderCode("404");
+		return message.getMessage();
     }
 
-	path += tok;	//API 주소
+	std::string path = apiPath + tok;	//API 주소
 	reqitem.in_req_url = std::string(tok);
 
 	if(pro.compare("GET") == 0)
@@ -204,7 +203,8 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 	
 	if( !tok )
 	{
-        return "";
+		message.setHeaderCode("404");
+		return message.getMessage();
     }
 	value = tok;		//GET 형식의 리퀘스트 파라미터
 						//지금은 body 파싱은 하지 않겠음
@@ -223,7 +223,7 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 	std::string data = "";
 	std::string body = "";
 #ifdef _WIN32
-	_sopen_s(&fd, filepath.c_str(), _O_WRONLY, _SH_DENYNO, _S_IWRITE);
+	_sopen_s(&fd, filepath.c_str(), _O_RDONLY, _SH_DENYNO, 0);
 #elif __linux__
 	fd = open(filepath.c_str(), O_RDONLY);
 #endif
@@ -239,19 +239,20 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 		data += buf;
 	}
 
-	_close(fd);
+	close(fd);
 
 	std::istringstream ss(data);
 	std::string line;
 
 	if(!std::getline(ss, line, '\n'))
 	{
-		return std::string();
+		return message.getMessage();
 	}
 
 	if(line.compare("#script") != 0)
 	{
-		return data;
+		message.addBodyText(data);
+		return message.getMessage();
 	}
 
 	bool in = false;
@@ -338,6 +339,5 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 		
 	}
 
-	data = message.getMessage();
-	return data;
+	return message.getMessage();
 }

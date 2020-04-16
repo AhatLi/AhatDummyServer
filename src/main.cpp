@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 	if(argc < 2)
 	{
 		AhatLogger::INFO(CODE, "insert port number");
+		std::cout << "insert port number\n";
 		AhatLogger::stop();
 		return 0;
 	}

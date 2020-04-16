@@ -2,7 +2,7 @@
 #define AHATLOGGER_H_
 
 /*
-Ahat Logger Version 1.0.1.QR2
+Ahat Logger Version 1.0.1.QR3
 */
 
 #include <iostream>
@@ -29,6 +29,8 @@ Ahat Logger Version 1.0.1.QR2
 
 #ifdef _WIN32
 #include <tchar.h>
+#include <windows.h>
+
 #define strncpy(X, Y, Z) strncpy_s(X, Y, Z)
 #define __FILENAME__    strrchr(__FILE__, '\\') +1
 #elif __linux__
@@ -89,8 +91,5 @@ public:
 	static void IN_REQ_DEBUG(std::string src_file, InReqItem in_req_item, std::string in_res_body);
 	static void IN_REQ_ERR_DEBUG(std::string src_file, InReqItem in_req_item, std::string in_res_body);
 };
-
-
-
 
 #endif
