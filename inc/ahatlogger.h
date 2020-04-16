@@ -35,6 +35,7 @@ Ahat Logger Version 1.0.1.QR3
 #define __FILENAME__    strrchr(__FILE__, '\\') +1
 #elif __linux__
 #include <dirent.h>
+#include <unistd.h>
 #define vsprintf_s(W, X, Y, Z) vsprintf(W, Y, Z)
 int _vscprintf (const char * format, va_list pargs);
 #define __FILENAME__    __FILE__
@@ -91,5 +92,8 @@ public:
 	static void IN_REQ_DEBUG(std::string src_file, InReqItem in_req_item, std::string in_res_body);
 	static void IN_REQ_ERR_DEBUG(std::string src_file, InReqItem in_req_item, std::string in_res_body);
 };
+
+
+
 
 #endif
