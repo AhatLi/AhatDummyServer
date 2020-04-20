@@ -115,8 +115,8 @@ std::string HTTPMessage::getMessage()
 		{
 			getMessageBatch();
 		}
-#endif
 	}
+#endif
 	else
 	{
 		/* raw */
@@ -186,7 +186,7 @@ bool HTTPMessage::getMessageShell()
 	fp = popen(file_data.c_str(), "r");
 	if (NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s shell file error", file_data);
+		AhatLogger::ERR(CODE, "%s shell file error", file_data);
 	}
 
 	while (fgets(buf, 127, fp))
@@ -209,7 +209,7 @@ bool HTTPMessage::getMessageShellText()
 	fp = popen(body_text.c_str(), "r");
 	if (NULL == fp)
 	{
-		AhatLogger::ERROR(CODE, "%s shell text error", body_file);
+		AhatLogger::ERR(CODE, "%s shell text error", body_file);
 	}
 
 	while (fgets(buf, 127, fp))

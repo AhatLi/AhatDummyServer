@@ -63,7 +63,8 @@ int DummyServer(int port)
 	int len = readlink("/proc/self/exe", buf, 256);
 	buf[len] = '\0';
 #endif
-	apiPath = buf + "API";
+	apiPath = buf;
+	apiPath += "API";
 
 	addrlen = sizeof(clientaddr);
 	while (1)
@@ -87,7 +88,7 @@ int closeOsSocket(int socket)
 #ifdef _WIN32
 	return closesocket(socket);
 #elif __linux__
-	return close(listen_sock);
+	return close(socket);
 #endif
 }
 
