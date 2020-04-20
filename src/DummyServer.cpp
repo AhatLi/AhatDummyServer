@@ -210,7 +210,9 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 						//지금은 body 파싱은 하지 않겠음
 	
 //	result = makeHeader(getFileData(path));	//파일에 헤더정보까지 직접 쓰도록
+#ifdef _WIN32
 	path = path.replace(path.find("/"), 1, "\\");
+#endif
 	result = getFileData(path, port, message);
 	return result;
 }

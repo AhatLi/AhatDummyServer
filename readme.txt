@@ -37,33 +37,31 @@ Content-Length:18
 
 
 스크립트 형식 예제)
+
+
+
 #script
 #if port 8000
 	#header-code=200
 	#header-content-type=application/json
-	#body-type=python3.8
+	#body-type=python
 	#body-file=test.py
-	#body-function=func1
-	#body-function-param_num=2
-	#body-function-param1=${param=param1}
-	#body-function-param2=${requestBody}
-#end
-#if port 7000
-	#header-code=200
-	#body-type=python3.8
-	#body-file=test.py
-	#body-function=func1
-	#body-function-param_num=2
-	#body-function-param="string",55
 #end
 #if port 6000
 	#header-code=404
 	#body-type=raw
 file not found
 #end
-#if port all
+#if port 5555
+	#header-code=201
 	#header-content-type=text
-	#body-type=raw
+	#body-type=batch
+	#body-file=test.bat
+#end
+#if port all
+	#header-code=200
+	#header-content-type=text/json
+            #body-type=raw
 텍스트 시작부터 끝까지 body로 친다
 
 이렇게 공백도 다 바디임

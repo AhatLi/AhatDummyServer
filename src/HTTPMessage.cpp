@@ -31,7 +31,7 @@ void HTTPMessage::setHeaderContentType(std::string value)
 
 void HTTPMessage::setHeaderContentLength(int value)
 {
-	body_file = value;
+	header_contentLength = value;
 }
 
 void HTTPMessage::setBodyType(std::string value)
@@ -226,12 +226,20 @@ bool HTTPMessage::getMessageBatch()
 {
 	int fd = 0;
 	FILE* fp;
-	char buf[128];
+	char buf[1030];
 	int num = 0;
 	std::string file_data = "";
 	std::string data = "";
 
-	file_data += "./";
+	wchar_t tmp[260];
+	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
+	std::wstring ws(tmp);
+	std::string path(ws.begin(), ws.end());
+	path = path.substr(0, path.find_last_of("."));
+
+	file_data = path + "API";
+
+	file_data += "\\";
 	file_data += body_file;
 	file_data += " ";
 	file_data += getBodyParamSpace();
@@ -242,8 +250,12 @@ bool HTTPMessage::getMessageBatch()
 		AhatLogger::ERR(CODE, "%s batch file error", file_data);
 	}
 
-	while (fgets(buf, 127, fp))
+	int i = 0;
+	while (fgets(buf, 1024, fp))
+	{
+		if (i++ < 2) continue;
 		data += buf;
+	}
 
 	_pclose(fp);
 
@@ -255,7 +267,7 @@ bool HTTPMessage::getMessageBatch()
 bool HTTPMessage::getMessageBatchText()
 {
 	FILE* fp;
-	char buf[128];
+	char buf[1030];
 	int num;
 	std::string data = "";
 
@@ -265,8 +277,12 @@ bool HTTPMessage::getMessageBatchText()
 		AhatLogger::ERR(CODE, "%s batch text error", body_file);
 	}
 
-	while (fgets(buf, 127, fp))
+	int i = 0;
+	while (fgets(buf, 1024, fp))
+	{
+		if (i++ < 2) continue;
 		data += buf;
+	}
 
 	_pclose(fp);
 
@@ -279,7 +295,7 @@ bool HTTPMessage::getMessageBatchText()
 bool HTTPMessage::getMessagePython()
 {
 	FILE *fp;
-	char buf[128];
+	char buf[1030];
 	std::string file_data = "";
 	std::string data = "";
 
@@ -298,7 +314,7 @@ bool HTTPMessage::getMessagePython()
 		AhatLogger::ERR(CODE, "%s script error", body_file);
 	}
 
-	while(fgets(buf, 127, fp))
+	while(fgets(buf, 1024, fp))
 		data += buf;
 
 #ifdef __linux__

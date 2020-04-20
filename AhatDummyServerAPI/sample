@@ -11,10 +11,16 @@ echo 1234
 	#body-type=python
 	#body-file=test.py
 #end
-#if port 8003
+#if port 5555
+	#header-code=201
+	#header-content-type=text
+	#body-type=batch
+	#body-file=test.bat
+#end
+#if port all
 	#header-code=200
 	#header-content-type=text/json
-        #body-type=raw
+            #body-type=raw
 텍스트 시작부터 끝까지 body로 친다
 
 이렇게 공백도 다 바디임
