@@ -3,8 +3,24 @@
 
 std::string apiPath = "";
 
-int DummyServer(int port) 
+int DummyServer::start() 
 {
+
+#ifdef _WIN32
+	wchar_t tmp[260];
+	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
+	std::wstring ws(tmp);
+	std::string buf(ws.begin(), ws.end());
+	buf = buf.substr(0, buf.find_last_of("."));
+#elif __linux__
+	char buf[256];
+	int len = readlink("/proc/self/exe", buf, 256);
+	buf[len] = '\0';
+#endif
+	apiPath = buf;
+	apiPath += "API";
+
+	/*
 	AhatLogger::INFO(CODE, "%d thread is start!", port);
 	std::cout << port << "thread is start!\n";
 	int retval = 0;
@@ -76,53 +92,43 @@ int DummyServer(int port)
 			return 0;
 		}
 
-		std::thread t(client_connect, client_sock, inet_ntoa(clientaddr.sin_addr), port);
-		t.detach();
+	//	std::thread t(client_connect, client_sock, inet_ntoa(clientaddr.sin_addr), port);
+	//	t.detach();
 	}
 
 	closeOsSocket(listen_sock);
-}
 
-int closeOsSocket(int socket)
-{
-#ifdef _WIN32
-	return closesocket(socket);
-#elif __linux__
-	return close(socket);
-#endif
-}
+	*/
 
-char* strtok_all(char* _String, const char* _Delimiter, char** _Context)
-{
-#ifdef _WIN32
-	return strtok_s(_String, _Delimiter, _Context);
-#elif __linux__
-	return strtok_r(_String, _Delimiter, _Context);
-#endif
-}
-
-std::string trim(std::string str)
-{
-	int n; 
-	n = str.find_first_not_of(" \t"); 
-	if ( n != std::string::npos ) 
+	while (1)
 	{
-		str.replace(0, n,""); 
+		if (!q.empty())
+		{
+			SOCKET socket = q.back();
+			q.pop();
+
+			char buf[32] = "127.0.0.1";
+			client_connect(socket, buf, 6666);
+		}
+		else
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
 	}
-	n = str.find_last_not_of(" \t"); 
-	if ( n != std::string::npos )
-	{
-		str.replace(n+1, str.length()-n,""); 
-	}
-	return str;
+
 }
 
-int client_connect(int client_sock, char* ip, int port)
+int DummyServer::client_connect(SOCKET client_sock, char* ip, int port)
 {
 	char buf[4096];
 	HTTPMessage message;
 	
 	int re = recv(client_sock, buf, 4096, 0);
+	if (re <= 0)
+	{
+		closeOsSocket(client_sock);
+		return 0;
+	}
 	buf[re] = '\0';	
 	InReqItem reqitem(ip, std::to_string(port), "", buf);
 		
@@ -134,7 +140,7 @@ int client_connect(int client_sock, char* ip, int port)
 	return 0;
 }
 
-std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem)
+std::string DummyServer::makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem)
 {
 	std::string result;
 	std::string header;
@@ -178,7 +184,9 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 		return message.getMessage();
     }
 
-	std::string path = apiPath + tok;	//API 주소
+	std::string path = "";	//API 주소
+	path += apiPath;
+	path += tok;
 	reqitem.in_req_url = std::string(tok);
 
 	if(pro.compare("GET") == 0)
@@ -218,7 +226,7 @@ std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqi
 	return result;
 }
 
-std::string getFileData(std::string filepath, int port, HTTPMessage message)
+std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage message)
 {
 	int fd;
 	char buf[129];
@@ -343,4 +351,38 @@ std::string getFileData(std::string filepath, int port, HTTPMessage message)
 	}
 
 	return message.getMessage();
+}
+
+int closeOsSocket(int socket)
+{
+#ifdef _WIN32
+	return closesocket(socket);
+#elif __linux__
+	return close(socket);
+#endif
+}
+
+char* strtok_all(char* _String, const char* _Delimiter, char** _Context)
+{
+#ifdef _WIN32
+	return strtok_s(_String, _Delimiter, _Context);
+#elif __linux__
+	return strtok_r(_String, _Delimiter, _Context);
+#endif
+}
+
+std::string trim(std::string str)
+{
+	int n;
+	n = str.find_first_not_of(" \t");
+	if (n != std::string::npos)
+	{
+		str.replace(0, n, "");
+	}
+	n = str.find_last_not_of(" \t");
+	if (n != std::string::npos)
+	{
+		str.replace(n + 1, str.length() - n, "");
+	}
+	return str;
 }

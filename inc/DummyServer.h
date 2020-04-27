@@ -12,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <queue>
 
 #include <fcntl.h>
 
@@ -39,12 +40,19 @@
 #include "HTTPMessage.h"
 #include "ahatlogger.h"
 
-std::string getFileData(std::string filepath, int port, HTTPMessage message);
-std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem);
-//std::string makeHeader(std::string body);
-int client_connect(int client_sock, char* ip, int port);
-int DummyServer(int port);
+class DummyServer
+{
+	std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem);
+	int client_connect(SOCKET client_sock, char* ip, int port);
+	std::string getFileData(std::string filepath, int port, HTTPMessage message);
+public:
+	int start();
 
+	std::queue<SOCKET> q;
+};
+
+
+std::string trim(std::string str);
 int closeOsSocket(int socket);
 char* strtok_all(char* _String, const char* _Delimiter, char** _Context);
 
