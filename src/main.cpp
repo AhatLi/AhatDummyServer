@@ -24,24 +24,74 @@ AhatDummyServer 1.0.0 Version Realese
 
 int main(int argc, char *argv[]) 
 {
-#ifdef __linux__
+
+#ifdef _WIN32
+    unsigned int fd_num = 0;
+#elif __linux__
 	struct rlimit lim;
 	getrlimit(RLIMIT_CORE, &lim);
 	lim.rlim_cur = lim.rlim_max;
 	setrlimit(RLIMIT_CORE, &lim);
+    unsigned int j;
 #endif
-    int c = 0;
+    int* listen_sock = new int[argc - 1];
+    int* port = new int[argc - 1];
+    int client_sock;
+    unsigned int i, c = 0;
+    int port_size = 0;
 
-	AhatLogger::setting("", "AhatDummyServer", 0);
-	AhatLogger::start();
-	
-	if(argc < 2)
-	{
-		AhatLogger::INFO(CODE, "insert port number");
-		std::cout << "insert port number\n";
-		AhatLogger::stop();
-		return 0;
-	}
+    bool debug = false;
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-g") == 0)
+        {
+            debug = true;
+            break;
+        }
+    }
+
+    if (debug)
+    {
+        AhatLogger::setting("", "AhatDummyServer", 0);
+        AhatLogger::start();
+        AhatLogger::DEBUG(CODE, "AhatDummyServer DEBUG MODE Start");
+    }
+    else
+    {
+        AhatLogger::setting("", "AhatDummyServer", 1);
+        AhatLogger::start();
+    }
+
+    if (argc < 2)
+    {
+        AhatLogger::INFO(CODE, "insert port number");
+        std::cout << "insert port number\n";
+        AhatLogger::stop();
+        return 0;
+    }
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-g") == 0)
+        {
+            continue;
+        }
+
+        std::stringstream str;
+        str << argv[i];
+        str >> port[port_size];
+
+        if (port[port_size] < 0 || port[port_size] > 65535)
+        {
+            AhatLogger::ERR(CODE, "%d is bad request!", port);
+            AhatLogger::stop();
+            return 0;
+        }
+        AhatLogger::DEBUG(CODE, "Server port %d : %d", i, port[port_size]);
+
+        port_size++;
+    }
 	
 	std::vector<std::shared_ptr<DummyServer> > threads;
 
@@ -55,9 +105,6 @@ int main(int argc, char *argv[])
         std::thread t(&DummyServer::start, server);
         t.detach();
     }
-	
-	AhatLogger::INFO(CODE, "AhatDummyServer start success");
-	std::cout << "AhatDummyServer start success\n";
 
 #ifdef _WIN32
     WSADATA wsaData;
@@ -89,24 +136,11 @@ int main(int argc, char *argv[])
         AhatLogger::stop();
     }
 #endif
-
-    int* listen_sock = new int[argc - 1];
-    int *port = new int[argc - 1];
-    int client_sock;
-    unsigned int i, j, fd_num = 0;
+    AhatLogger::INFO(CODE, "AhatDummyServer start success");
+    std::cout << "AhatDummyServer start success\n";
     
-    for (int i = 0; i < argc - 1; i++)
+    for (int i = 0; i < port_size; i++)
     {
-        std::stringstream str;
-        str << argv[i+1];
-        str >> port[i];
-
-        if (port[i] < 0 || port[i] > 65535)
-        {
-            AhatLogger::ERR(CODE, "%d is bad request!", port);
-            AhatLogger::stop();
-            return 0;
-        }
 
 #ifdef _WIN32
         listen_sock[i] = socket(PF_INET, SOCK_STREAM, 0);
@@ -186,6 +220,7 @@ int main(int argc, char *argv[])
                 }
 
                 InReqItem reqitem(inet_ntoa(clientaddr.sin_addr), std::to_string(port[i]), "");
+                AhatLogger::INFO(CODE, "Client Accept, %s, %d", inet_ntoa(clientaddr.sin_addr), port[i]);
                 threads[c++]->Enqueue(client_sock, reqitem);
                 if (core <= c + 1)
                     c = 0;

@@ -5,7 +5,6 @@ std::string apiPath = "";
 
 int DummyServer::start() 
 {
-	printf("thread start\n");
 #ifdef _WIN32
 	wchar_t tmp[260];
 	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
@@ -53,10 +52,11 @@ int DummyServer::client_connect(int client_sock, InReqItem reqitem)
 	int port;
 	ss >> port;
 	
+	reqitem.in_req_body = std::string(buf);
 	std::string result = makeResult(buf, port, message, reqitem);
 	send(client_sock, result.c_str(), result.length(), 0);
 	closeOsSocket(client_sock);
-    AhatLogger::IN_REQ(CODE, reqitem, result);
+    AhatLogger::IN_REQ_DEBUG(CODE, reqitem, result);
 
 	return 0;
 }
