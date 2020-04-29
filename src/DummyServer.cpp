@@ -5,7 +5,7 @@ std::string apiPath = "";
 
 int DummyServer::start() 
 {
-
+	printf("thread start\n");
 #ifdef _WIN32
 	wchar_t tmp[260];
 	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
@@ -19,119 +19,40 @@ int DummyServer::start()
 #endif
 	apiPath = buf;
 	apiPath += "API";
-
-	/*
-	AhatLogger::INFO(CODE, "%d thread is start!", port);
-	std::cout << port << "thread is start!\n";
-	int retval = 0;
-	int client_sock = 0;  
-
-#ifdef _WIN32
-	WSADATA wsaData;
-	int addrlen;
-	SOCKADDR_IN clientaddr;
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-	{
-		printf("winsock error!\n");
-		exit(1);
-	}
-	SOCKET listen_sock = socket(PF_INET, SOCK_STREAM, 0);
-#elif __linux__
-	struct sockaddr_in clientaddr;
-	socklen_t addrlen;
-	int listen_sock = socket(PF_INET, SOCK_STREAM, 0);
-#endif
-
-	if (listen_sock == -1) 
-	{
-		AhatLogger::ERR(CODE, "%d port socket error", port);
-		return 0;
-	}
-
-	struct sockaddr_in serveraddr;
-	memset(&serveraddr, 0, sizeof(serveraddr));
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(port);
-
-	auto l = bind(listen_sock, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-	if (retval == -1) 
-	{
-		AhatLogger::ERR(CODE, "%d port socket error", port);
-		return 0;
-	}
-
-	retval = listen(listen_sock, SOMAXCONN);
-	if (retval == -1) 
-	{
-		AhatLogger::ERR(CODE, "%d port listen error", port);
-		return 0;
-	}
-
-#ifdef _WIN32
-	wchar_t tmp[260];
-	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
-	std::wstring ws(tmp);
-	std::string buf(ws.begin(), ws.end());
-	buf = buf.substr(0, buf.find_last_of("."));
-#elif __linux__
-	char buf[256];
-	int len = readlink("/proc/self/exe", buf, 256);
-	buf[len] = '\0';
-#endif
-	apiPath = buf;
-	apiPath += "API";
-
-	addrlen = sizeof(clientaddr);
-	while (1)
-	{
-		client_sock = accept(listen_sock, (struct sockaddr *)&clientaddr, &addrlen);
-		if (client_sock == -1)  
-		{
-			AhatLogger::ERR(CODE, "%d port connect error", port);
-			return 0;
-		}
-
-	//	std::thread t(client_connect, client_sock, inet_ntoa(clientaddr.sin_addr), port);
-	//	t.detach();
-	}
-
-	closeOsSocket(listen_sock);
-
-	*/
 
 	while (1)
 	{
 		if (!q.empty())
 		{
-			SOCKET socket = q.back();
-			q.pop();
-
-			char buf[32] = "127.0.0.1";
-			client_connect(socket, buf, 6666);
+			auto data = Dequeue();
+			client_connect(data.first, data.second);
 		}
 		else
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 	}
 
+	return 0;
 }
 
-int DummyServer::client_connect(SOCKET client_sock, char* ip, int port)
+int DummyServer::client_connect(int client_sock, InReqItem reqitem)
 {
 	char buf[4096];
 	HTTPMessage message;
 	
-	int re = recv(client_sock, buf, 4096, 0);
-	if (re <= 0)
+	int ret = recv(client_sock, buf, 4096, 0);
+	if (ret <= 0)
 	{
 		closeOsSocket(client_sock);
 		return 0;
 	}
-	buf[re] = '\0';	
-	InReqItem reqitem(ip, std::to_string(port), "", buf);
-		
+	buf[ret] = '\0';	
+
+	std::stringstream ss(reqitem.in_req_port);
+	int port;
+	ss >> port;
+	
 	std::string result = makeResult(buf, port, message, reqitem);
 	send(client_sock, result.c_str(), result.length(), 0);
 	closeOsSocket(client_sock);
@@ -232,7 +153,6 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 	char buf[129];
 	int num;
 	std::string data = "";
-	std::string body = "";
 #ifdef _WIN32
 	_sopen_s(&fd, filepath.c_str(), _O_RDONLY, _SH_DENYNO, 0);
 #elif __linux__
@@ -260,6 +180,9 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 		return message.getMessage();
 	}
 
+	if(line.find("\r") != std::string::npos)
+		line = line.replace(line.find("\r"), 1, "");
+
 	if(line.compare("#script") != 0)
 	{
 		message.addBodyText(data);
@@ -269,6 +192,8 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 	bool in = false;
 	while(std::getline(ss, line, '\n'))
 	{
+		if (line.find("\r") != std::string::npos)
+			line = line.replace(line.find("\r"), 1, "");
 		if(line.find("//") != std::string::npos)
 		{
 			line = line.substr(0, line.find("//"));
@@ -347,10 +272,27 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 		{
 			/* error */
 		}
-		
 	}
 
 	return message.getMessage();
+}
+
+
+void DummyServer::Enqueue(int client_sock, InReqItem reqitem)
+{
+	std::pair<int, InReqItem> p;
+	p.first = client_sock;
+	p.second = reqitem;
+
+	q.push(p);
+}
+
+std::pair<int, InReqItem> DummyServer::Dequeue()
+{
+	auto socket = q.back();
+	q.pop();
+
+	return socket;
 }
 
 int closeOsSocket(int socket)

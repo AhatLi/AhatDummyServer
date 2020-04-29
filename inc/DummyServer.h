@@ -17,12 +17,12 @@
 #include <fcntl.h>
 
 #ifdef _WIN32
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WinSock2.h>
 #include <direct.h>
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <WS2tcpip.h>
 
 #define read(X, Y, Z) _read(X, Y, Z)
 #define close(X) _close(X)
@@ -43,12 +43,14 @@
 class DummyServer
 {
 	std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem);
-	int client_connect(SOCKET client_sock, char* ip, int port);
+	int client_connect(int client_sock, InReqItem reqitem);
 	std::string getFileData(std::string filepath, int port, HTTPMessage message);
+
+	std::queue<std::pair<int, InReqItem> > q;
 public:
 	int start();
-
-	std::queue<SOCKET> q;
+	void Enqueue(int client_sock, InReqItem reqitem);
+	std::pair<int, InReqItem> Dequeue();
 };
 
 
