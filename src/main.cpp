@@ -1,5 +1,9 @@
-#include <iostream>
+/*
+2020-04-29
+AhatDummyServer 1.0.0 Version Realese
+*/
 
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -54,7 +58,6 @@ int main(int argc, char *argv[])
 	
 	AhatLogger::INFO(CODE, "AhatDummyServer start success");
 	std::cout << "AhatDummyServer start success\n";
-
 
 #ifdef _WIN32
     WSADATA wsaData;
