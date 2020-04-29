@@ -4,8 +4,8 @@ GCCVERSION = $(shell gcc --version | grep 4\\.4\\.)
 INCDIR = inc
 OBJDIR = obj
 SRCDIR = src
-INCLUDEDIR = -I/usr/include/python3.8 -I$(INCDIR)
-LIBDIR = -L/usr/lib/python3.8/config-x86_64-linux-gnu -Llib
+INCLUDEDIR = -I$(INCDIR)
+LIBDIR = -Llib
 LIBS = -lpthread -lahatlogger
 ETC = -std=gnu++0x -g
 TARGET = AhatDummyServer
