@@ -1,0 +1,3 @@
+[submodule "lib/ahatlogger"]
+	path = lib/ahatlogger
+	url = https://github.com/AhatLi/ahatlogger.git

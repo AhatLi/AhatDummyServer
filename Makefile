@@ -1,11 +1,12 @@
 CC = g++
 GCCVERSION = $(shell gcc --version | grep 4\\.4\\.)
 
-INCDIR = inc
+INCDIR = inc 
+LIBINCDIR = lib/ahatlogger/AhatLogger/inc 
 OBJDIR = obj
 SRCDIR = src
-INCLUDEDIR = -I$(INCDIR)
-LIBDIR = -Llib
+INCLUDEDIR = -I$(INCDIR) -I$(LIBINCDIR)
+LIBDIR = -Llib/ahatlogger/AhatLogger/lib
 LIBS = -lpthread -lahatlogger
 ETC = -std=gnu++0x -g
 TARGET = AhatDummyServer
@@ -22,7 +23,7 @@ endif
 
 all : ${TARGET}
 
-$(TARGET) : $(OBJDIR) $(OBJS)
+$(TARGET) : $(OBJDIR) $(OBJS) $(LIBDIR)
 	$(CC) -o $@ $(OBJS) $(INCLUDEDIR) $(LIBDIR) $(LIBS) $(ETC)
 
 $(OBJS) :  $(INCS) $(SRCS)
@@ -30,6 +31,9 @@ $(OBJS) :  $(INCS) $(SRCS)
 
 $(OBJDIR) :
 	mkdir -p $(OBJDIR)
+
+$(LIBDIR) :
+	(cd lib/ahatlogger/AhatLogger && make)
 
 clean :
 	rm -rf $(OBJDIR) ${TARGET}
