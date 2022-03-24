@@ -53,13 +53,13 @@ int main(int argc, char *argv[])
 
     if (debug)
     {
-        AhatLogger::setting("", "AhatDummyServer", 0);
+        AhatLogger::setting("logs", "AhatDummyServer", 0);
         AhatLogger::start();
         AhatLogger::DEBUG(CODE, "AhatDummyServer DEBUG MODE Start");
     }
     else
     {
-        AhatLogger::setting("", "AhatDummyServer", 1);
+        AhatLogger::setting("logs", "AhatDummyServer", 1);
         AhatLogger::start();
     }
 
