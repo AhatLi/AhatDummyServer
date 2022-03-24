@@ -6,7 +6,8 @@ LIBINCDIR = lib/ahatlogger/AhatLogger/inc
 OBJDIR = obj
 SRCDIR = src
 INCLUDEDIR = -I$(INCDIR) -I$(LIBINCDIR)
-LIBDIR = -Llib/ahatlogger/AhatLogger/lib
+LIBDIR = lib/ahatlogger/AhatLogger/lib
+LINKLIB = -L$(LIBDIR)
 LIBS = -lpthread -lahatlogger
 ETC = -std=gnu++0x -g
 TARGET = AhatDummyServer
@@ -24,10 +25,10 @@ endif
 all : ${TARGET}
 
 $(TARGET) : $(OBJDIR) $(OBJS) $(LIBDIR)
-	$(CC) -o $@ $(OBJS) $(INCLUDEDIR) $(LIBDIR) $(LIBS) $(ETC)
+	$(CC) -o $@ $(OBJS) $(INCLUDEDIR) $(LINKLIB) $(LIBS) $(ETC)
 
 $(OBJS) :  $(INCS) $(SRCS)
-	$(CC)  -c $(@:$(OBJDIR)%.o=$(SRCDIR)%.cpp) -o $@ $(INCLUDEDIR) $(LIBDIR) $(LIBS) $(ETC)
+	$(CC)  -c $(@:$(OBJDIR)%.o=$(SRCDIR)%.cpp) -o $@ $(INCLUDEDIR) $(LINKLIB) $(LIBS) $(ETC)
 
 $(OBJDIR) :
 	mkdir -p $(OBJDIR)
