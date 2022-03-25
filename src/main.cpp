@@ -96,9 +96,9 @@ int main(int argc, char *argv[])
 	std::vector<std::shared_ptr<DummyServer> > threads;
 
     int core = std::thread::hardware_concurrency();
-    if (core < 2)
+    if (core <= 2)
         core = 2;
-    for (int i = 0; i < core - 1; i++)
+    for (int i = 0; i < core; i++)
     {
         auto server = std::make_shared<DummyServer>();
         threads.push_back(server);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     struct epoll_event ev, *events;
 
     events = (struct epoll_event*)malloc(sizeof(struct epoll_event) * EPOLL_SIZE);
-    if ((epollfd = epoll_create(100)) == -1)
+    if ((epollfd = epoll_create(EPOLL_SIZE)) == -1)
     {
         std::cout << "epoll_create Error!\n";
         AhatLogger::ERR(CODE, "epoll_create Error!");
@@ -171,14 +171,14 @@ int main(int argc, char *argv[])
 
         if (bind(listen_sock[i], (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1)
         {
-            AhatLogger::ERR(CODE, "%d port socket error", port);
+            AhatLogger::ERR(CODE, "%d port bind error", port[i]);
             AhatLogger::stop();
             return 0;
         }
 
         if(listen(listen_sock[i], SOMAXCONN) == -1)
         {
-            AhatLogger::ERR(CODE, "%d port listen error", port);
+            AhatLogger::ERR(CODE, "%d port listen error", port[i]);
             AhatLogger::stop();
             return 0;
         }
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
                 InReqItem reqitem(inet_ntoa(clientaddr.sin_addr), std::to_string(port[i]), "");
                 AhatLogger::INFO(CODE, "Client Accept, %s, %d", inet_ntoa(clientaddr.sin_addr), port[i]);
                 threads[c++]->Enqueue(client_sock, reqitem);
-                if (core <= c + 1)
+                if (core <= c)
                     c = 0;
 #ifdef __linux__    
                 }

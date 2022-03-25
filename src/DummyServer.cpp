@@ -1,5 +1,6 @@
 #include "DummyServer.h"
 #include "HTTPMessage.h"
+#include <errno.h>
 
 std::string apiPath = "";
 
@@ -40,11 +41,23 @@ int DummyServer::client_connect(int client_sock, InReqItem reqitem)
 	char buf[4096];
 	HTTPMessage message;
 	
-	int ret = recv(client_sock, buf, 4096, 0);
-	if (ret <= 0)
+	AhatLogger::DEBUG(CODE, "client_sock %d", client_sock);
+	int ret = 0;
+	
+	int err;
+	ret = recv(client_sock, buf, 9000, 0);
+	err = errno; // save off errno, because because the printf statement might reset it
+	if (ret < 0)
 	{
-		closeOsSocket(client_sock);
-		return 0;
+		if ((err == EAGAIN) || (err == EWOULDBLOCK))
+		{
+			AhatLogger::ERR(CODE, "non-blocking operation returned EAGAIN or EWOULDBLOCK");
+		}
+		else
+		{
+			AhatLogger::ERR(CODE, "recv returned unrecoverable error(errno=%d)", err);
+		}
+		ret = 0;
 	}
 	buf[ret] = '\0';	
 

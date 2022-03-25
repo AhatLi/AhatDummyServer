@@ -160,6 +160,8 @@ std::string HTTPMessage::getHeader(int bodyLength)
 	{
 		header += header_contentType;
 	}
+	header += "\r\nConnection: close";
+	header += "\r\nCache-Control: no-cache";
 	
 	header += "\r\nContent-Length: ";
 	header += std::to_string(bodyLength);
