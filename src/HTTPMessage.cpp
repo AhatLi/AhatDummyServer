@@ -49,6 +49,11 @@ void HTTPMessage::setBodyParam(std::string value)
 	body_param = value;
 }
 
+void HTTPMessage::setFilePath(std::string value)
+{
+	file_path = value;
+}
+
 std::string HTTPMessage::getBodyParamSpace()
 {
 	std::string tmp_text = body_param;
@@ -180,7 +185,7 @@ bool HTTPMessage::getMessageShell()
 	std::string file_data = "";
 	std::string data = "";
 
-	file_data += "./";
+	file_data += file_path + "/";
 	file_data += body_file;
 	file_data += " ";
 	file_data += getBodyParamSpace();

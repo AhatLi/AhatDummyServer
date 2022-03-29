@@ -1,11 +1,106 @@
-#include "DummyServer.h"
 #include "HTTPMessage.h"
 #include <errno.h>
+#include "DummyServer.h"
+
+#ifdef _WIN32
+#include <winsock2.h> 
+#elif __linux__
+#include <sys/epoll.h>
+#define EPOLL_SIZE 20
+#endif
 
 std::string apiPath = "";
 
-int DummyServer::start() 
+int DummyServer::start(int port_size, int* port) 
 {
+    int* listen_sock = new int[port_size];
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    int addrlen;
+    SOCKADDR_IN serveraddr, clientaddr;
+    fd_set old_fds, new_fds;
+
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+    {
+        std::cout << "WSAStartup Error\n";
+        AhatLogger::ERR(CODE, "WSAStartup Error");
+        AhatLogger::stop();
+        return 0;
+    }
+    FD_ZERO(&new_fds);
+#elif __linux__
+    struct sockaddr_in serveraddr, clientaddr;
+    socklen_t addrlen;
+    int client_sock;
+
+    int eventn;
+    int epollfd;
+    struct epoll_event ev, *events;
+
+    events = (struct epoll_event*)malloc(sizeof(struct epoll_event) * EPOLL_SIZE);
+    if ((epollfd = epoll_create(EPOLL_SIZE)) == -1)
+    {
+        std::cout << "epoll_create Error!\n";
+        AhatLogger::ERR(CODE, "epoll_create Error!");
+    }
+#endif
+	
+    for (int i = 0; i < port_size; i++)
+    {
+
+#ifdef _WIN32
+        listen_sock[i] = socket(PF_INET, SOCK_STREAM, 0);
+        if (listen_sock[i] == INVALID_SOCKET)
+        {
+            std::cout << "Socket Error!\n";
+            AhatLogger::ERR(CODE, "Socket Error!");
+            AhatLogger::stop();
+            return 0;
+        }
+#elif __linux__
+        struct sockaddr_in clientaddr;
+        socklen_t addrlen;
+        listen_sock[i] = socket(PF_INET, SOCK_STREAM, 0);
+        if (listen_sock[i] < 0)
+        {
+            std::cout << "Socket Error!\n";
+            AhatLogger::ERR(CODE, "Socket Error!");
+            return 0;
+        }
+
+		int opt = 1;
+		setsockopt(listen_sock[i], SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); 
+		
+#endif
+        memset((void*)&serveraddr, 0x00, sizeof(serveraddr));
+
+        serveraddr.sin_family = AF_INET;
+        serveraddr.sin_port = htons(port[i]);
+        serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+        if (bind(listen_sock[i], (struct sockaddr*)&serveraddr, sizeof(serveraddr)) == -1)
+        {
+            AhatLogger::ERR(CODE, "%d port bind error", port[i]);
+            return 0;
+        }
+
+        if(listen(listen_sock[i], SOMAXCONN) == -1)
+        {
+            AhatLogger::ERR(CODE, "%d port listen error", port[i]);
+            return 0;
+        }
+
+
+#ifdef _WIN32
+        FD_SET(listen_sock[i], &new_fds);
+#elif __linux__    
+        ev.events = EPOLLIN;
+        ev.data.fd = listen_sock[i];
+        epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock[i], &ev);
+#endif
+    }
+
 #ifdef _WIN32
 	wchar_t tmp[260];
 	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
@@ -20,34 +115,69 @@ int DummyServer::start()
 	apiPath = buf;
 	apiPath += "API";
 
-	while (1)
-	{
-		if (!q.empty())
+    while (1)
+    {
+#ifdef _WIN32
+        old_fds = new_fds;
+        fd_num = select(0, &old_fds, NULL, NULL, NULL);
+#elif __linux__    
+        eventn = epoll_wait(epollfd, events, EPOLL_SIZE, -1);
+#endif
+
+		bool process = false;
+		for (int i = 0; i < eventn; i++)
 		{
-			auto data = Dequeue();
-			client_connect(data.first, data.second);
-		}
-		else
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			for (int j = 0; j < port_size; j++)
+			{
+				if (events[i].data.fd == listen_sock[j])    // 듣기 소켓에서 이벤트가 발생함
+				{
+					addrlen = sizeof(clientaddr);
+					client_sock = accept(listen_sock[j], (struct sockaddr*) & clientaddr, &addrlen);
+					if (client_sock < 0)
+					{
+						continue;
+					}
+
+					rdata* request_data = new rdata();
+
+					request_data->item = std::make_shared<InReqItem>(inet_ntoa(clientaddr.sin_addr), std::to_string(port[j]), "");
+					request_data->fd = client_sock;
+
+					ev.data.ptr = request_data;
+
+        			ev.events = EPOLLIN;
+					epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sock, &ev);
+
+					process = true;
+					break;
+				}
+			}
+			if(!process)
+			{		
+				auto request_data = (rdata *)events[i].data.ptr;
+
+				client_connect( request_data);
+			}
+			else 
+			{
+				continue;;
+			}
 		}
 	}
 
 	return 0;
 }
 
-int DummyServer::client_connect(int client_sock, InReqItem reqitem)
+int DummyServer::client_connect(rdata* request_data)
 {
 	char buf[4096];
 	HTTPMessage message;
 	
-	AhatLogger::DEBUG(CODE, "client_sock %d", client_sock);
-	int ret = 0;
-	
+	int ret = 0;	
 	int err;
-	ret = recv(client_sock, buf, 9000, 0);
+	ret = recv(request_data->fd, buf, 9000, 0);
 	err = errno; // save off errno, because because the printf statement might reset it
-	if (ret < 0)
+	if (ret <= 0)
 	{
 		if ((err == EAGAIN) || (err == EWOULDBLOCK))
 		{
@@ -58,18 +188,23 @@ int DummyServer::client_connect(int client_sock, InReqItem reqitem)
 			AhatLogger::ERR(CODE, "recv returned unrecoverable error(errno=%d)", err);
 		}
 		ret = 0;
+
+		delete request_data;
+		return 0;
 	}
 	buf[ret] = '\0';	
 
-	std::stringstream ss(reqitem.in_req_port);
+	std::stringstream ss(request_data->item.get()->in_req_port);
 	int port;
 	ss >> port;
 	
-	reqitem.in_req_body = std::string(buf);
-	std::string result = makeResult(buf, port, message, reqitem);
-	send(client_sock, result.c_str(), result.length(), 0);
-	closeOsSocket(client_sock);
-    AhatLogger::IN_REQ_DEBUG(CODE, reqitem, result);
+	request_data->item.get()->in_req_body = std::string(buf);
+	std::string result = makeResult(buf, port, message, *request_data->item.get());
+	send(request_data->fd, result.c_str(), result.length(), 0);
+	socketClose(request_data->fd);
+    AhatLogger::IN_REQ_DEBUG(CODE, *request_data->item.get(), result);
+
+	delete request_data;
 
 	return 0;
 }
@@ -92,6 +227,7 @@ std::string DummyServer::makeResult(char* msg, int port, HTTPMessage message, In
 	if (!tok)
 	{
 		message.setHeaderCode("404");
+
 		return message.getMessage();
 	}
 	pro = tok;
@@ -199,6 +335,7 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 	if(line.compare("#script") != 0)
 	{
 		message.addBodyText(data);
+		message.setFilePath(apiPath);
 		return message.getMessage();
 	}
 
@@ -287,28 +424,11 @@ std::string DummyServer::getFileData(std::string filepath, int port, HTTPMessage
 		}
 	}
 
+	message.setFilePath(apiPath);
 	return message.getMessage();
 }
 
-
-void DummyServer::Enqueue(int client_sock, InReqItem reqitem)
-{
-	std::pair<int, InReqItem> p;
-	p.first = client_sock;
-	p.second = reqitem;
-
-	q.push(p);
-}
-
-std::pair<int, InReqItem> DummyServer::Dequeue()
-{
-	auto socket = q.back();
-	q.pop();
-
-	return socket;
-}
-
-int closeOsSocket(int socket)
+int socketClose(int socket)
 {
 #ifdef _WIN32
 	return closesocket(socket);

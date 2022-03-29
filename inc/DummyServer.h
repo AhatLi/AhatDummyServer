@@ -40,22 +40,26 @@
 #include "HTTPMessage.h"
 #include "ahatlogger.h"
 
+typedef struct s_rdata
+{
+    int fd;
+    std::shared_ptr<InReqItem> item;
+} rdata;
+
 class DummyServer
 {
 	std::string makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem);
-	int client_connect(int client_sock, InReqItem reqitem);
+	int client_connect(rdata* request_data);
 	std::string getFileData(std::string filepath, int port, HTTPMessage message);
-
-	std::queue<std::pair<int, InReqItem> > q;
 public:
-	int start();
-	void Enqueue(int client_sock, InReqItem reqitem);
+	int start(int port_size, int* port);
+	void Enqueue(std::shared_ptr<rdata> request_data);
 	std::pair<int, InReqItem> Dequeue();
 };
 
 
 std::string trim(std::string str);
-int closeOsSocket(int socket);
+int socketClose(int socket);
 char* strtok_all(char* _String, const char* _Delimiter, char** _Context);
 
 #endif

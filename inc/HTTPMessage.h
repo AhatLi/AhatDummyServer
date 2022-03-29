@@ -22,6 +22,7 @@ private:
     std::string body_param;
 
     std::string body_text;
+	std::string file_path;
 
 #ifdef __linux__
 	bool getMessageShell();
@@ -43,6 +44,7 @@ public:
 	void setBodyType(std::string value);
 	void setBodyFile(std::string value);
 	void setBodyParam(std::string value);
+	void setFilePath(std::string value);
 	void addBodyText(std::string value);
 
 	std::string getMessage();
