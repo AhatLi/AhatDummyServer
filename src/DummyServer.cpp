@@ -11,6 +11,16 @@
 
 std::string apiPath = "";
 
+rdata::rdata()
+{
+	item = new InReqItem();
+}
+
+rdata::~rdata()
+{
+	delete item;
+}
+
 int DummyServer::start(int port_size, int* port) 
 {
     int* listen_sock = new int[port_size];
@@ -139,12 +149,11 @@ int DummyServer::start(int port_size, int* port)
 					}
 
 					rdata* request_data = new rdata();
-
-					request_data->item = std::make_shared<InReqItem>(inet_ntoa(clientaddr.sin_addr), std::to_string(port[j]), "");
+					request_data->item->in_req_ip = inet_ntoa(clientaddr.sin_addr);
+					request_data->item->in_req_port = std::to_string(port[j]);
 					request_data->fd = client_sock;
 
 					ev.data.ptr = request_data;
-
         			ev.events = EPOLLIN;
 					epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sock, &ev);
 
@@ -156,7 +165,10 @@ int DummyServer::start(int port_size, int* port)
 			{		
 				auto request_data = (rdata *)events[i].data.ptr;
 
-				client_connect( request_data);
+				if(client_connect(request_data) < 0) 
+				{
+					epoll_ctl(epollfd, EPOLL_CTL_DEL, client_sock, NULL);
+				}
 			}
 			else 
 			{
@@ -187,22 +199,24 @@ int DummyServer::client_connect(rdata* request_data)
 		{
 			AhatLogger::ERR(CODE, "recv returned unrecoverable error(errno=%d)", err);
 		}
-		ret = 0;
 
-		delete request_data;
-		return 0;
+		if(!request_data)
+		{
+			delete request_data;
+		}
+		return -1;
 	}
 	buf[ret] = '\0';	
 
-	std::stringstream ss(request_data->item.get()->in_req_port);
+	std::stringstream ss(request_data->item->in_req_port);
 	int port;
 	ss >> port;
 	
-	request_data->item.get()->in_req_body = std::string(buf);
-	std::string result = makeResult(buf, port, message, *request_data->item.get());
+	request_data->item->in_req_body = std::string(buf);
+	std::string result = makeResult(buf, port, message, *request_data->item);
 	send(request_data->fd, result.c_str(), result.length(), 0);
 	socketClose(request_data->fd);
-    AhatLogger::IN_REQ_DEBUG(CODE, *request_data->item.get(), result);
+    AhatLogger::IN_REQ_DEBUG(CODE, *request_data->item, result);
 
 	delete request_data;
 

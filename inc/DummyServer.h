@@ -40,11 +40,15 @@
 #include "HTTPMessage.h"
 #include "ahatlogger.h"
 
-typedef struct s_rdata
+class rdata
 {
+public:
     int fd;
-    std::shared_ptr<InReqItem> item;
-} rdata;
+    InReqItem* item;
+
+	rdata();
+	~rdata();
+};
 
 class DummyServer
 {
