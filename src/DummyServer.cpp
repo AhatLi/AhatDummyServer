@@ -24,12 +24,16 @@ rdata::~rdata()
 int DummyServer::start(int port_size, int* port) 
 {
     int* listen_sock = new int[port_size];
+	int client_sock;
 
 #ifdef _WIN32
     WSADATA wsaData;
     int addrlen;
     SOCKADDR_IN serveraddr, clientaddr;
     fd_set old_fds, new_fds;
+
+	unsigned int fd_num = 0;
+	int eventn;
 
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
@@ -42,7 +46,6 @@ int DummyServer::start(int port_size, int* port)
 #elif __linux__
     struct sockaddr_in serveraddr, clientaddr;
     socklen_t addrlen;
-    int client_sock;
 
     int eventn;
     int epollfd;
@@ -55,6 +58,20 @@ int DummyServer::start(int port_size, int* port)
         AhatLogger::ERR(CODE, "epoll_create Error!");
     }
 #endif
+
+#ifdef _WIN32
+	wchar_t tmp[260];
+	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
+	std::wstring ws(tmp);
+	std::string buf(ws.begin(), ws.end());
+	buf = buf.substr(0, buf.find_last_of("."));
+#elif __linux__
+	char buf[256];
+	int len = readlink("/proc/self/exe", buf, 256);
+	buf[len] = '\0';
+#endif
+	apiPath = buf;
+	apiPath += "API";
 	
     for (int i = 0; i < port_size; i++)
     {
@@ -112,35 +129,55 @@ int DummyServer::start(int port_size, int* port)
     }
 
 #ifdef _WIN32
-	wchar_t tmp[260];
-	int len = GetModuleFileName(NULL, tmp, MAX_PATH);
-	std::wstring ws(tmp);
-	std::string buf(ws.begin(), ws.end());
-	buf = buf.substr(0, buf.find_last_of("."));
-#elif __linux__
-	char buf[256];
-	int len = readlink("/proc/self/exe", buf, 256);
-	buf[len] = '\0';
-#endif
-	apiPath = buf;
-	apiPath += "API";
 
+	while (1)
+	{
+		bool process = false;
+		old_fds = new_fds;
+		fd_num = select(0, &old_fds, NULL, NULL, NULL);
+
+		for (int j = 0; j < port_size; j++)
+		{
+			if (FD_ISSET(listen_sock[j], &old_fds))
+			{
+				addrlen = sizeof(clientaddr);
+				client_sock = accept(listen_sock[j], (struct sockaddr*)&clientaddr, &addrlen);
+				if (client_sock < 0)
+				{
+					continue;
+				}
+
+				rdata* request_data = new rdata();
+				request_data->item->in_req_ip = inet_ntoa(clientaddr.sin_addr);
+				request_data->item->in_req_port = std::to_string(port[j]);
+				request_data->fd = client_sock;
+
+				process = true;
+
+				FD_SET(client_sock, &new_fds);
+			}
+		}
+		if (!process)
+		{
+		}
+		else
+		{
+			continue;;
+		}
+	}
+#elif __linux__    
     while (1)
     {
-#ifdef _WIN32
-        old_fds = new_fds;
-        fd_num = select(0, &old_fds, NULL, NULL, NULL);
-#elif __linux__    
-        eventn = epoll_wait(epollfd, events, EPOLL_SIZE, -1);
-#endif
-
 		bool process = false;
+        eventn = epoll_wait(epollfd, events, EPOLL_SIZE, -1);
+
 		for (int i = 0; i < eventn; i++)
 		{
 			for (int j = 0; j < port_size; j++)
 			{
 				if (events[i].data.fd == listen_sock[j])    // 듣기 소켓에서 이벤트가 발생함
 				{
+					process = true;
 					addrlen = sizeof(clientaddr);
 					client_sock = accept(listen_sock[j], (struct sockaddr*) & clientaddr, &addrlen);
 					if (client_sock < 0)
@@ -157,14 +194,12 @@ int DummyServer::start(int port_size, int* port)
         			ev.events = EPOLLIN;
 					epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sock, &ev);
 
-					process = true;
 					break;
 				}
 			}
 			if(!process)
-			{		
+			{
 				auto request_data = (rdata *)events[i].data.ptr;
-
 				if(client_connect(request_data) < 0) 
 				{
 					epoll_ctl(epollfd, EPOLL_CTL_DEL, client_sock, NULL);
@@ -174,8 +209,16 @@ int DummyServer::start(int port_size, int* port)
 			{
 				continue;;
 			}
+
+			if (events[i].events & (EPOLLRDHUP | EPOLLHUP)) {
+				printf("[+] connection closed\n");
+				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+				close(events[i].data.fd);
+				continue;
+			}
 		}
 	}
+#endif
 
 	return 0;
 }
