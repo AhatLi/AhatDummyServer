@@ -207,7 +207,7 @@ int DummyServer::start(int port_size, int* port)
 			}
 			else 
 			{
-				continue;;
+				continue;
 			}
 
 			if (events[i].events & (EPOLLRDHUP | EPOLLHUP)) {
@@ -228,6 +228,7 @@ int DummyServer::client_connect(rdata* request_data)
 	char buf[4096];
 	HTTPMessage message;
 	
+	int retcode  = 0;
 	int ret = 0;	
 	int err;
 	ret = recv(request_data->fd, buf, 9000, 0);
@@ -242,14 +243,12 @@ int DummyServer::client_connect(rdata* request_data)
 		{
 			AhatLogger::ERR(CODE, "recv returned unrecoverable error(errno=%d)", err);
 		}
-
-		if(!request_data)
-		{
-			delete request_data;
-		}
-		return -1;
+		retcode = -1;
 	}
-	buf[ret] = '\0';	
+	else
+	{
+		buf[ret] = '\0';	
+	}
 
 	std::stringstream ss(request_data->item->in_req_port);
 	int port;
@@ -261,9 +260,13 @@ int DummyServer::client_connect(rdata* request_data)
 	socketClose(request_data->fd);
     AhatLogger::IN_REQ_DEBUG(CODE, *request_data->item, result);
 
-	delete request_data;
 
-	return 0;
+	if(!request_data)
+	{
+		delete request_data;
+	}
+
+	return retcode;
 }
 
 std::string DummyServer::makeResult(char* msg, int port, HTTPMessage message, InReqItem& reqitem)
