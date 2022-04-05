@@ -13,6 +13,7 @@ std::string apiPath = "";
 
 rdata::rdata()
 {
+	fd = 0;
 	item = new InReqItem();
 }
 
@@ -130,39 +131,50 @@ int DummyServer::start(int port_size, int* port)
 
 #ifdef _WIN32
 
+	std::map<int, rdata*> m;
+
 	while (1)
 	{
-		bool process = false;
 		old_fds = new_fds;
 		fd_num = select(0, &old_fds, NULL, NULL, NULL);
 
-		for (int j = 0; j < port_size; j++)
+		for (int j = 0; j < old_fds.fd_count; j++)
 		{
-			if (FD_ISSET(listen_sock[j], &old_fds))
+			SOCKET currentSocket = old_fds.fd_array[j];
+			if (FD_ISSET(currentSocket, &old_fds))
 			{
-				addrlen = sizeof(clientaddr);
-				client_sock = accept(listen_sock[j], (struct sockaddr*)&clientaddr, &addrlen);
-				if (client_sock < 0)
+				for (int i = 0; i < port_size; i++)
 				{
-					continue;
+					if (currentSocket == listen_sock[i])
+					{
+
+						addrlen = sizeof(clientaddr);
+						client_sock = accept(currentSocket, (struct sockaddr*)&clientaddr, &addrlen);
+						if (client_sock < 0)
+						{
+							continue;
+						}
+
+						rdata* request_data = new rdata();
+						request_data->item->in_req_ip = inet_ntoa(clientaddr.sin_addr);
+						request_data->item->in_req_port = std::to_string(ntohs(clientaddr.sin_port));
+						request_data->fd = client_sock;
+
+						m[client_sock] = request_data;
+
+						FD_SET(client_sock, &new_fds);
+					}
 				}
-
-				rdata* request_data = new rdata();
-				request_data->item->in_req_ip = inet_ntoa(clientaddr.sin_addr);
-				request_data->item->in_req_port = std::to_string(port[j]);
-				request_data->fd = client_sock;
-
-				process = true;
-
-				FD_SET(client_sock, &new_fds);
+				if (m.find(currentSocket) != m.end())
+				{
+					rdata* request_data = m[currentSocket];
+					if (client_connect(request_data) < 0)
+					{
+						FD_CLR(currentSocket, &new_fds);
+					}
+					m.erase(currentSocket);
+				}
 			}
-		}
-		if (!process)
-		{
-		}
-		else
-		{
-			continue;;
 		}
 	}
 #elif __linux__    
@@ -205,16 +217,10 @@ int DummyServer::start(int port_size, int* port)
 					epoll_ctl(epollfd, EPOLL_CTL_DEL, client_sock, NULL);
 				}
 			}
-			else 
+			if (events[i].events & (EPOLLRDHUP | EPOLLHUP)) 
 			{
-				continue;
-			}
-
-			if (events[i].events & (EPOLLRDHUP | EPOLLHUP)) {
-				printf("[+] connection closed\n");
 				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
 				close(events[i].data.fd);
-				continue;
 			}
 		}
 	}
